@@ -99,4 +99,4 @@ This is a browser prototype. It deliberately does not:
 
 Books are kept apart structurally, not by convention: storage holds one snapshot per book and every API path names its project, so a record in one book cannot reference a record in another.
 
-See `../docs/wordsmithery-implementation-plan-v0.2.md` for the phased plan, data model, API surface, acceptance test matrix, risks and open decisions.
+See `../docs/wordsmithery-implementation-plan-v0.2.md` for the phased plan, data model, API surface, acceptance test matrix, risks and open decisions. For the GitHub Actions VPS workflow and one-time server preparation, see [`docs/wordsmithery-vps-deployment.md`](docs/wordsmithery-vps-deployment.md) in the GitHub repository.
