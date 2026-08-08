@@ -2,11 +2,14 @@ node_modules/
 dist/
 .vite/
 
-# SQLite database files — never commit; exposes demo data at rest
-data.db
-data.db-shm
-data.db-wal
-data.db-journal
+# SQLite database files — never commit. They hold accounts, session hashes,
+# passkey public keys and every book, so they must stay off the repository.
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite
+*.sqlite3
 
 .env
 .env.*

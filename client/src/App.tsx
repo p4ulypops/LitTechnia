@@ -8,6 +8,9 @@ import { ThemeProvider } from "@/components/theme";
 import { AppShell } from "@/components/shell";
 import { DraftZeroOverlay } from "@/components/draft-zero";
 import { WorkspaceProvider } from "@/lib/workspace";
+import { AuthProvider, useAuth } from "@/lib/auth";
+import SignInPage from "@/pages/sign-in";
+import { AccountRoute, PasskeySetupPage } from "@/pages/account";
 import HomePage from "@/pages/home";
 import LibraryPage from "@/pages/library";
 import ImportPage from "@/pages/import";
@@ -33,8 +36,56 @@ function AppRouter() {
       <Route path="/worldbuilding" component={WorldPage} />
       <Route path="/research" component={ResearchPage} />
       <Route path="/exports" component={ExportsPage} />
+      <Route path="/account" component={AccountRoute} />
+      <Route path="/passkey-setup" component={PasskeySetupPage} />
       <Route component={NotFound} />
     </Switch>
+  );
+}
+
+/**
+ * The one gate. While the session is being checked nothing data-shaped is
+ * rendered; without a session only the sign-in page exists. This is a rendering
+ * decision only — every API route re-checks the session server-side.
+ */
+function AuthGate() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div
+        className="flex min-h-screen items-center justify-center px-6"
+        data-testid="status-session-loading"
+      >
+        <p className="text-sm text-muted-foreground">Opening your workshop…</p>
+      </div>
+    );
+  }
+
+  if (!user) return <SignInPage />;
+
+  return (
+    <WorkspaceProvider>
+      {/* A button, not an anchor: hash routing would treat href="#main" as a route. */}
+      <button
+        type="button"
+        data-testid="button-skip-to-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-sm focus:border focus:border-border focus:bg-card focus:px-3 focus:py-2 focus:text-sm"
+        onClick={() => {
+          const main = document.getElementById("main");
+          if (!main) return;
+          main.setAttribute("tabindex", "-1");
+          main.focus();
+          main.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+      >
+        Skip to content
+      </button>
+      <AppShell>
+        <AppRouter />
+      </AppShell>
+      <DraftZeroOverlay />
+    </WorkspaceProvider>
   );
 }
 
@@ -45,27 +96,9 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router hook={useHashLocation}>
-            <WorkspaceProvider>
-              {/* A button, not an anchor: hash routing would treat href="#main" as a route. */}
-              <button
-                type="button"
-                data-testid="button-skip-to-content"
-                className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-sm focus:border focus:border-border focus:bg-card focus:px-3 focus:py-2 focus:text-sm"
-                onClick={() => {
-                  const main = document.getElementById("main");
-                  if (!main) return;
-                  main.setAttribute("tabindex", "-1");
-                  main.focus();
-                  main.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-              >
-                Skip to content
-              </button>
-              <AppShell>
-                <AppRouter />
-              </AppShell>
-              <DraftZeroOverlay />
-            </WorkspaceProvider>
+            <AuthProvider>
+              <AuthGate />
+            </AuthProvider>
           </Router>
         </TooltipProvider>
       </ThemeProvider>

@@ -1,13 +1,23 @@
 /**
- * HTTP API (v0.2).
+ * HTTP API (v0.3).
  *
- * Every content route is nested under /api/projects/:projectId so the book a
- * write belongs to is never inferred from server state. Unknown project ids get
- * a 404 rather than silently falling back to another book.
+ * Two invariants:
+ *   - Every content route is nested under /api/projects/:projectId so the book a
+ *     write belongs to is never inferred from server state.
+ *   - Every content route runs behind `requireAuth` and passes the *session's*
+ *     user id to storage. The owner is never read from the body, a query string
+ *     or a header, so a signed-in author cannot address another author's book;
+ *     an unowned or unknown project id is an indistinguishable 404.
+ *
+ * Only /api/health and /api/auth/* are reachable without a session.
  */
 import type { Express } from "express";
 import type { Server } from "node:http";
 import { storage } from "./storage";
+import { registerAuthRoutes } from "./auth/routes";
+import { attachSession, checkOrigin, requireAuth } from "./auth/session";
+import { isDemoOwner } from "./auth/demo";
+import { env, publicAuthConfig, requestHostname } from "./env";
 import {
   collections,
   importRequestSchema,
@@ -58,35 +68,67 @@ function isCollection(value: string): value is CollectionName {
   return (collections as readonly string[]).includes(value);
 }
 
-export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
-  /* ----------------------------------------------------------------- library */
+export async function registerRoutes(
+  httpServer: Server,
+  app: Express,
+): Promise<Server> {
+  /* ------------------------------------------------------- session plumbing */
 
-  app.get("/api/projects", (_req, res) => {
-    res.json({ projects: storage.listProjects() });
+  app.use(attachSession);
+  app.use("/api", checkOrigin);
+
+  /** Liveness only: no session, no data, nothing configuration-revealing. */
+  app.get("/api/health", (req, res) => {
+    res.json({
+      status: "ok",
+      auth: publicAuthConfig(requestHostname(req.headers)),
+    });
   });
 
-  app.get("/api/library/snapshots", (_req, res) => {
-    res.json({ projects: storage.allSnapshots() });
+  registerAuthRoutes(app);
+
+  // From here down every /api route requires a signed-in author.
+  app.use("/api/projects", requireAuth);
+  app.use("/api/library", requireAuth);
+
+  /* ----------------------------------------------------------------- library */
+
+  app.get("/api/projects", (req, res) => {
+    res.json({ projects: storage.listProjects(req.auth!.user.id) });
+  });
+
+  app.get("/api/library/snapshots", (req, res) => {
+    res.json({ projects: storage.allSnapshots(req.auth!.user.id) });
   });
 
   app.post("/api/projects", (req, res) => {
     const parsed = newProjectSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: "A book needs a title", detail: parsed.error.message });
+      return res
+        .status(400)
+        .json({ error: "A book needs a title", detail: parsed.error.message });
     }
-    res.status(201).json(storage.createProject(parsed.data));
+    res.status(201).json(storage.createProject(req.auth!.user.id, parsed.data));
   });
 
   app.get("/api/projects/:projectId/snapshot", (req, res) => {
-    const snapshot = storage.getSnapshot(req.params.projectId);
+    const snapshot = storage.getSnapshot(
+      req.auth!.user.id,
+      req.params.projectId,
+    );
     if (!snapshot) return res.status(404).json({ error: "Unknown project" });
     res.json(snapshot);
   });
 
   app.patch("/api/projects/:projectId", (req, res) => {
     const parsed = projectPatchSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "Invalid project patch" });
-    const project = storage.updateProject(req.params.projectId, parsed.data);
+    if (!parsed.success)
+      return res.status(400).json({ error: "Invalid project patch" });
+    const project = storage.updateProject(
+      req.auth!.user.id,
+      req.params.projectId,
+      parsed.data,
+    );
     if (!project) return res.status(404).json({ error: "Unknown project" });
     res.json(project);
   });
@@ -96,9 +138,18 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.post("/api/projects/:projectId/import", (req, res) => {
     const parsed = importRequestSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: "Nothing valid to import", detail: parsed.error.message });
+      return res
+        .status(400)
+        .json({
+          error: "Nothing valid to import",
+          detail: parsed.error.message,
+        });
     }
-    const result = storage.importItems(req.params.projectId, parsed.data.items);
+    const result = storage.importItems(
+      req.auth!.user.id,
+      req.params.projectId,
+      parsed.data.items,
+    );
     if (!result) return res.status(404).json({ error: "Unknown project" });
     res.status(201).json(result);
   });
@@ -109,8 +160,14 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const parsed = z
       .object({ id: z.string(), direction: z.enum(["up", "down"]) })
       .safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: "Invalid reorder request" });
-    const scenes = storage.moveScene(req.params.projectId, parsed.data.id, parsed.data.direction);
+    if (!parsed.success)
+      return res.status(400).json({ error: "Invalid reorder request" });
+    const scenes = storage.moveScene(
+      req.auth!.user.id,
+      req.params.projectId,
+      parsed.data.id,
+      parsed.data.direction,
+    );
     if (!scenes) return res.status(404).json({ error: "Unknown project" });
     res.json(scenes);
   });
@@ -119,40 +176,95 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/projects/:projectId/:collection", (req, res) => {
     const { collection, projectId } = req.params;
-    if (!isCollection(collection)) return res.status(404).json({ error: "Unknown collection" });
-    if (!storage.getSnapshot(projectId)) return res.status(404).json({ error: "Unknown project" });
-    const parsed = insertSchemas[collection].safeParse({ projectId, ...req.body });
-    if (!parsed.success) {
-      return res.status(400).json({ error: "Validation failed", detail: parsed.error.message });
+    if (!isCollection(collection))
+      return res.status(404).json({ error: "Unknown collection" });
+    if (!storage.owns(req.auth!.user.id, projectId)) {
+      return res.status(404).json({ error: "Unknown project" });
     }
-    const row = storage.create(projectId, collection, parsed.data as Record<string, unknown>);
+    const parsed = insertSchemas[collection].safeParse({
+      projectId,
+      ...req.body,
+    });
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: "Validation failed", detail: parsed.error.message });
+    }
+    const row = storage.create(
+      req.auth!.user.id,
+      projectId,
+      collection,
+      parsed.data as Record<string, unknown>,
+    );
     res.status(201).json(row);
   });
 
   app.patch("/api/projects/:projectId/:collection/:id", (req, res) => {
     const { collection, projectId, id } = req.params;
-    if (!isCollection(collection)) return res.status(404).json({ error: "Unknown collection" });
+    if (!isCollection(collection))
+      return res.status(404).json({ error: "Unknown collection" });
     const parsed = insertSchemas[collection].partial().safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: "Validation failed", detail: parsed.error.message });
+      return res
+        .status(400)
+        .json({ error: "Validation failed", detail: parsed.error.message });
     }
-    const row = storage.update(projectId, collection, id, parsed.data as Record<string, unknown>);
-    if (!row) return res.status(404).json({ error: "Not found in this project" });
+    const row = storage.update(
+      req.auth!.user.id,
+      projectId,
+      collection,
+      id,
+      parsed.data as Record<string, unknown>,
+    );
+    if (!row)
+      return res.status(404).json({ error: "Not found in this project" });
     res.json(row);
   });
 
   app.delete("/api/projects/:projectId/:collection/:id", (req, res) => {
     const { collection, projectId, id } = req.params;
-    if (!isCollection(collection)) return res.status(404).json({ error: "Unknown collection" });
-    const ok = storage.remove(projectId, collection, id);
-    if (!ok) return res.status(404).json({ error: "Not found in this project" });
+    if (!isCollection(collection))
+      return res.status(404).json({ error: "Unknown collection" });
+    const ok = storage.remove(req.auth!.user.id, projectId, collection, id);
+    if (!ok)
+      return res.status(404).json({ error: "Not found in this project" });
     res.status(204).end();
   });
 
   /* ------------------------------------------------------------------- demo */
 
-  app.post("/api/reset", (_req, res) => {
-    res.json({ projects: storage.reset() });
+  /**
+   * Reseed the demo library. Only the development demo account can call this,
+   * so a real author can never wipe their own books with it and a real account
+   * can never be handed the sample books.
+   */
+  app.post("/api/reset", requireAuth, (req, res) => {
+    if (!isDemoOwner(req.auth?.user)) {
+      return res
+        .status(403)
+        .json({ error: "The demo library is only available in development." });
+    }
+    res.json({ projects: storage.seedDemoLibrary(req.auth!.user.id) });
+  });
+
+  if (!env.isProduction) {
+    app.get("/api/dev/config", requireAuth, (_req, res) => {
+      res.json({
+        rpId: env.rpId,
+        origins: env.origins,
+        appUrl: env.appUrl,
+        demo: env.demoSeed,
+      });
+    });
+  }
+
+  /**
+   * Anything under /api that reached this point does not exist — including the
+   * development-only routes above when running in production. Answer with JSON
+   * rather than letting the SPA fallback return an HTML page with status 200.
+   */
+  app.use("/api", (_req, res) => {
+    res.status(404).json({ error: "Unknown endpoint" });
   });
 
   return httpServer;

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, ListSkeleton, Panel, StatusPill } from "@/components/fields";
 import { CraftLens, RestoreLensesButton, lenses } from "@/components/craft-lens";
+import { useAuth } from "@/lib/auth";
 import {
   entityName,
   kindLabels,
@@ -13,18 +14,71 @@ import {
   readinessChecks,
   relatedLinks,
   sceneStatuses,
+  useLibrary,
   useSnapshot,
   useStoryActions,
   useWorkspace,
   wordCount,
 } from "@/lib/workspace";
 
+/**
+ * A brand-new account owns nothing, on purpose: no sample books, no other
+ * author's material. This is the whole of the first-run experience — start a
+ * book, or bring in what you already have.
+ */
+function FirstRun() {
+  const [, navigate] = useLocation();
+  return (
+    <div className="mx-auto max-w-3xl space-y-6" data-testid="status-no-books">
+      <header>
+        <p className="eyebrow">Welcome</p>
+        <h1 className="mt-1 font-serif text-2xl leading-tight md:text-3xl">
+          Your library is empty
+        </h1>
+        <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
+          Nothing is here yet, and nothing is borrowed from anyone else. Start a book and
+          Wordsmithery will hold its manuscript, characters, plot threads, timeline, world notes and
+          research in one place — without writing a word of it for you.
+        </p>
+      </header>
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={() => navigate("/library")} data-testid="button-firstrun-create">
+          <Plus className="mr-1.5 h-4 w-4" /> Start your first book
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => navigate("/import")}
+          data-testid="button-firstrun-import"
+        >
+          <FileUp className="mr-1.5 h-4 w-4" /> Import files I already have
+        </Button>
+      </div>
+      <Panel eyebrow="What happens next" title="Two honest notes">
+        <ul className="space-y-2 text-sm text-muted-foreground">
+          <li>
+            Importing never rewrites your files. It reads them, shows you what it thinks each one is,
+            and files nothing until you confirm.
+          </li>
+          <li>
+            You can export any book — or the whole library — as Markdown or JSON at any time from the
+            Exports page.
+          </li>
+        </ul>
+      </Panel>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const { data: snapshot, isLoading } = useSnapshot();
+  const { data: library, isLoading: libraryLoading } = useLibrary();
   const actions = useStoryActions();
+  const { user } = useAuth();
   const { openDraftZero, select } = useWorkspace();
   const [, navigate] = useLocation();
   const [newItem, setNewItem] = useState("");
+
+  if (!libraryLoading && library && library.projects.length === 0) return <FirstRun />;
 
   if (isLoading || !snapshot) {
     return (
@@ -338,16 +392,19 @@ export default function HomePage() {
 
           <div className="flex flex-wrap items-center gap-2">
             <RestoreLensesButton />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground"
-              data-testid="button-reset-demo"
-              onClick={() => actions.reset()}
-              title="Restore the whole seeded library, discarding books you created"
-            >
-              <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Reset demo library
-            </Button>
+            {/* Only the local demo account has sample books to restore. */}
+            {user?.isDemo && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+                data-testid="button-reset-demo"
+                onClick={() => actions.reset()}
+                title="Restore the seeded demo library, discarding demo books you created"
+              >
+                <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Reset demo library
+              </Button>
+            )}
           </div>
         </div>
       </div>

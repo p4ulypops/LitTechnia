@@ -191,14 +191,14 @@ Executed against the production build (`NODE_ENV=production node dist/index.cjs`
 | 17 | Imported records appear only in the active book | compared both books after import | pass (Ada Mireille import in Salt and Signal only; Glass Meridian characters unchanged) |
 | 18 | Import into a second book stays separate | 2 items into The Glass Meridian | pass (timeline gained "Timeline of the flood year", unplaced) |
 | 19 | Export page states its scope | `/#/exports` | pass ("contain The Glass Meridian only … `wordsmithery-project/0.2`") |
-| 20 | Library JSON export covers every book | `button-export-library-json` | pass (3 books, 39,191 bytes, download triggered, labelled "Library snapshot (all books)") |
+| 20 | Library JSON export covers every book | `button-export-library-json` | pass (3 books, 37,074 bytes measured — an earlier draft of this table said 39,191, which was wrong; download triggered, labelled "Library snapshot (all books)") |
 | 21 | Mobile drawer still opens, holds the switcher, and closes on switch | 390×844, waited for `left === 0` | pass (switched to Salt and Signal, drawer unmounted) |
 | 22 | Mobile library and import wizard usable at 390 px | full-page screenshots | pass (no overflow; review rows stack) |
 | 23 | Import confirm works on mobile | 390×844 sample import | pass ("3 items imported into Salt and Signal") |
 | 24 | Dark mode intact on new pages | toggle on `/#/library` | pass (`dark` class, tokens applied) |
 | 25 | Unknown route still recovers | `/#/nonsense` | pass (recovery page, no data loss) |
 | 26 | Reset restores the seeded library | `button-reset-demo` | pass (created books discarded, 3 seeded books returned) |
-| 27 | Typecheck and production build | `npm run check`, `npm run build` | pass (no TS errors; 750 kB JS / 213 kB gzip, 88 kB CSS) |
+| 27 | Typecheck and production build | `npm run check`, `npm run build` | pass (no TS errors; measured at the time: JS 750,681 B raw / 211,866 B gzip, CSS 87,893 B raw / 13,980 B gzip) |
 
 Screenshots: `/home/user/workspace/wordsmithery-qa-v02-desktop-library.jpg`, `-desktop-library-dark.jpg`, `-desktop-import-review.jpg`, `-mobile-drawer.jpg`, `-mobile-library.jpg`, `-mobile-import-review.jpg`, `-mobile-import-done.jpg`. Fixtures for the picker test: `/home/user/workspace/wordsmithery-import-fixtures/`.
 
@@ -221,7 +221,7 @@ Screenshots: `/home/user/workspace/wordsmithery-qa-v02-desktop-library.jpg`, `-d
 4. *Multi-book leakage* would be the most damaging possible bug. Mitigated structurally (per-project snapshot maps, project-scoped routes) and checked in acceptance cases 3–5, 17 and 18. A cross-project link type is deliberately not offered.
 5. *Snapshot-per-book fetching* is fine at novel scale; a library of dozens of long books will need per-collection queries. The library list already returns counts only.
 6. *In-memory storage resets on restart* — correct for a demo, stated in the header, on the Library and on the Exports page.
-7. *Bundle size* ~750 kB uncompressed (213 kB gzip). Acceptable for a desktop shell, worth code-splitting before any hosted release.
+7. *Bundle size* 750,681 B uncompressed (211,866 B gzip) as measured for v0.2. Acceptable for a desktop shell, worth code-splitting before any hosted release.
 
 **Open decisions** (carried forward): encryption threat model and key custody; desktop shell technology; Markdown dialect and front-matter schema for round-trip fidelity; DOCX/PDF typesetting engine; whether a library index file exists on disk or the shelf is derived by scanning folders; sharing model; business model. New in v0.2: whether archiving should ever move a folder on disk, and whether the importer should support folder-tree ingestion in the desktop shell.
 

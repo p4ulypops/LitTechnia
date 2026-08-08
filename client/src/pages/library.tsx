@@ -293,11 +293,19 @@ export default function LibraryPage() {
           On the shelf · {active.length} book{active.length === 1 ? "" : "s"}
         </h2>
         {active.length === 0 ? (
-          <EmptyState
-            title="No books open"
-            body="Everything is archived. Bring one back below, or start a new book."
-            testId="empty-active-books"
-          />
+          archived.length === 0 ? (
+            <EmptyState
+              title="Your library is empty"
+              body="Start your first book below, or import files you already have. Nothing is pre-filled and nothing is borrowed from another account."
+              testId="empty-library-new"
+            />
+          ) : (
+            <EmptyState
+              title="No books open"
+              body="Everything is archived. Bring one back below, or start a new book."
+              testId="empty-active-books"
+            />
+          )
         ) : (
           <div className="grid gap-4 md:grid-cols-2" data-testid="grid-active-books">
             {active.map((book) => (
@@ -328,17 +336,21 @@ export default function LibraryPage() {
         )}
       </section>
 
-      <Panel eyebrow="How this demo stores your books" title="Honest limits">
+      <Panel eyebrow="How your books are stored" title="Honest limits">
         <ul className="space-y-2 text-sm text-muted-foreground">
           <li>
-            This prototype keeps the whole library in the server process for the length of the
-            session. Restarting the server, or pressing “Reset demo library”, restores the seeded books
-            and discards anything you added.
+            Your books are saved in this server's database and belong to your account alone. They
+            survive a restart. No other account can read or write them, and the app never shows you
+            anybody else's material.
           </li>
           <li>
-            There is no browser storage of any kind — no localStorage, no cookies, no IndexedDB — and
-            no account. In the shipped app each book is a folder of Markdown and JSON on your own
-            disk.
+            The browser stores nothing except one sign-in cookie, which exists only so the server can
+            recognise your session. There is no localStorage, sessionStorage or IndexedDB.
+          </li>
+          <li>
+            Full local-first sync and at-rest encryption are <em>not</em> delivered yet. Until they
+            are, the Exports page is your escape hatch: Markdown and JSON, whole library included,
+            whenever you want it.
           </li>
           <li>
             Archiving is a state on the book, not a delete. Nothing here removes your words.

@@ -1,12 +1,20 @@
 import "dotenv/config";
 import express, { Response, NextFunction } from 'express';
 import type { Request } from 'express';
+import cookieParser from "cookie-parser";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "node:http";
+import { env } from "./env";
+import { ensureSchema, pruneExpired } from "./db";
+import { prepareDemoLibrary } from "./auth/demo";
 
 const app = express();
 const httpServer = createServer(app);
+
+// Behind nginx/Caddy on the VPS: needed for correct req.ip (rate limiting) and
+// for `Secure` cookies to be recognised as sent over https.
+app.set("trust proxy", 1);
 
 declare module "http" {
   interface IncomingMessage {
@@ -23,6 +31,7 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -50,7 +59,9 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
+      // Never log auth payloads: they can contain magic-link URLs, WebAuthn
+      // challenges and email addresses.
+      if (capturedJsonResponse && !path.startsWith("/api/auth")) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
 
@@ -62,6 +73,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  ensureSchema();
+  pruneExpired();
+  prepareDemoLibrary();
+  log(
+    `auth: rp=${env.rpId} origins=${env.origins.join(" ")} ` +
+      `email=${env.emailConfigured ? "resend" : "log-only"} demo=${env.demoSeed}`,
+    "config",
+  );
+
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
@@ -91,7 +111,7 @@ app.use((req, res, next) => {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
+  const port = env.port;
   httpServer.listen(
     {
       port,

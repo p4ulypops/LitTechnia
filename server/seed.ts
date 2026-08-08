@@ -47,6 +47,7 @@ export function buildGlassMeridian(): ProjectSnapshot {
   return {
     project: {
       id: P,
+      ownerId: "", // assigned by storage when the demo library is seeded
       title: "The Glass Meridian",
       subtitle: "Book one of the Vitrified Coast",
       author: "You",

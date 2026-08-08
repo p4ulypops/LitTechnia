@@ -21,6 +21,7 @@ export function buildSaltAndSignal(): ProjectSnapshot {
   return {
     project: {
       id: S,
+      ownerId: "", // assigned by storage when the demo library is seeded
       title: "Salt and Signal",
       subtitle: "A drowned-coast first contact story",
       author: "You",
@@ -227,6 +228,7 @@ export function buildArchivedBook(): ProjectSnapshot {
   return {
     project: {
       id: W,
+      ownerId: "", // assigned by storage when the demo library is seeded
       title: "The Weatherwright's Daughter",
       subtitle: "Shelved after the first act",
       author: "You",

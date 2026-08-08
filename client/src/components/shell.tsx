@@ -10,6 +10,8 @@ import {
   Home,
   Library,
   NotebookPen,
+  LogOut,
+  UserRound,
   Users,
   Wand2,
 } from "lucide-react";
@@ -37,6 +39,8 @@ import {
 } from "@/components/ui/select";
 import { WordsmitheryLockup } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme";
+import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
 import { manuscriptWords, useLibrary, useSnapshot, useWorkspace } from "@/lib/workspace";
 
 const nav = [
@@ -50,6 +54,7 @@ const nav = [
   { href: "/research", label: "Research", icon: NotebookPen, group: "Material" },
   { href: "/import", label: "Import", icon: FileUp, group: "Material" },
   { href: "/exports", label: "Exports", icon: Download, group: "Material" },
+  { href: "/account", label: "Account", icon: UserRound, group: "Material" },
 ];
 
 const groups = ["Project", "Writing", "Story development", "Material"];
@@ -57,9 +62,11 @@ const groups = ["Project", "Writing", "Story development", "Material"];
 /** Book switcher. Lives in the header and again at the top of the sidebar. */
 function BookSwitcher({ testId, onSwitched }: { testId: string; onSwitched?: () => void }) {
   const { activeProjectId, setActiveProject } = useWorkspace();
-  const { data: library } = useLibrary();
+  const { data: library, isLoading: libraryLoading } = useLibrary();
   const [, navigate] = useLocation();
   const books = (library?.projects ?? []).filter((b) => b.archived === 0);
+  // A new account has no books at all; say so rather than implying a stuck load.
+  const placeholder = libraryLoading ? "Loading books" : books.length ? "Choose a book" : "No books yet";
   const value = activeProjectId && books.some((b) => b.id === activeProjectId) ? activeProjectId : "";
 
   return (
@@ -79,7 +86,7 @@ function BookSwitcher({ testId, onSwitched }: { testId: string; onSwitched?: () 
         data-testid={testId}
         aria-label="Switch book"
       >
-        <SelectValue placeholder="Loading books" />
+        <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
         {books.map((book) => (
@@ -161,6 +168,44 @@ function NavSidebar() {
   );
 }
 
+/** Who is signed in, and the way out. Identity comes from the server session. */
+function AccountStrip() {
+  const { user, signOut } = useAuth();
+  const [, navigate] = useLocation();
+  if (!user) return null;
+
+  return (
+    <span className="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 max-w-[11rem] justify-start gap-1.5 px-2 md:px-2.5"
+        onClick={() => navigate("/account")}
+        data-testid="button-account"
+        title={user.email}
+      >
+        <UserRound className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        {/* On narrow screens the icon alone stands for the account; the address is
+            still reachable on the Account page and in the button's title. */}
+        <span className="hidden truncate font-mono text-xs md:inline" data-testid="text-signed-in-email">
+          {user.email}
+        </span>
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 px-2"
+        onClick={() => void signOut()}
+        data-testid="button-sign-out"
+        aria-label="Sign out"
+      >
+        <LogOut className="h-3.5 w-3.5" aria-hidden />
+        <span className="ml-1.5 hidden text-xs sm:inline">Sign out</span>
+      </Button>
+    </span>
+  );
+}
+
 function Header() {
   const { data: snapshot } = useSnapshot();
   const words = snapshot ? manuscriptWords(snapshot.scenes) : 0;
@@ -175,9 +220,10 @@ function Header() {
         <span className="hidden font-mono text-xs text-muted-foreground sm:inline" data-testid="text-header-wordcount">
           {words.toLocaleString()} words
         </span>
-        <span className="hidden rounded-sm border border-border px-2 py-1 text-xs text-muted-foreground md:inline">
-          Local session · nothing uploaded
+        <span className="hidden rounded-sm border border-border px-2 py-1 text-xs text-muted-foreground lg:inline">
+          Your account · nothing shared
         </span>
+        <AccountStrip />
         <ThemeToggle />
       </div>
     </header>

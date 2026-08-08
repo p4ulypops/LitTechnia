@@ -11,6 +11,12 @@
  * Every other table already carried `projectId`; that column is now the real
  * boundary — the API refuses to read or write across it.
  *
+ * v0.3: accounts. `projects.ownerId` is the second boundary — a book belongs to
+ * exactly one author account, and the API resolves the owner from the server
+ * session, never from anything the client sends. Auth material (users,
+ * sessions, passkeys, single-use magic-link tokens, WebAuthn challenges) lives
+ * in the same SQLite file so a deployment is one file plus environment values.
+ *
  * Lists (setups, payoffs, tags) are stored as JSON text because SQLite has no
  * array column type.
  */
@@ -18,10 +24,111 @@ import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+/* ------------------------------------------------------------------- auth */
+
+/**
+ * One author account. Email is the only identifier we keep; there is no
+ * password column anywhere in this schema by design.
+ */
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  displayName: text("display_name").notNull().default(""),
+  createdAt: text("created_at").notNull().default(""),
+  lastSignInAt: text("last_sign_in_at").notNull().default(""),
+  isDemo: integer("is_demo").notNull().default(0), // 1 = local demo owner, never a real person
+});
+
+/**
+ * Server-side sessions. `id` is the SHA-256 of the cookie token, so a database
+ * copy cannot be replayed as a live session.
+ */
+export const sessions = sqliteTable("sessions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  createdAt: text("created_at").notNull(),
+  lastSeenAt: text("last_seen_at").notNull(),
+  expiresAt: text("expires_at").notNull(),
+  method: text("method").notNull().default("passkey"), // passkey | magic-link | dev
+});
+
+/** Registered public-key credentials. Private keys never leave the device. */
+export const passkeys = sqliteTable("passkeys", {
+  id: text("id").primaryKey(), // credential id, base64url
+  userId: text("user_id").notNull(),
+  label: text("label").notNull().default("Passkey"),
+  publicKey: text("public_key").notNull(), // base64url COSE public key
+  counter: integer("counter").notNull().default(0),
+  transports: text("transports").notNull().default("[]"), // JSON string[]
+  deviceType: text("device_type").notNull().default(""),
+  backedUp: integer("backed_up").notNull().default(0),
+  createdAt: text("created_at").notNull(),
+  lastUsedAt: text("last_used_at").notNull().default(""),
+});
+
+/** Short-lived WebAuthn challenges, held server-side and used once. */
+export const webauthnChallenges = sqliteTable("webauthn_challenges", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().default(""),
+  purpose: text("purpose").notNull(), // registration | authentication
+  challenge: text("challenge").notNull(),
+  createdAt: text("created_at").notNull(),
+  expiresAt: text("expires_at").notNull(),
+});
+
+/** Single-use magic-link tokens. `id` is the SHA-256 of the emailed token. */
+export const magicLinks = sqliteTable("magic_links", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  createdAt: text("created_at").notNull(),
+  expiresAt: text("expires_at").notNull(),
+  usedAt: text("used_at").notNull().default(""),
+});
+
+export type User = typeof users.$inferSelect;
+export type Session = typeof sessions.$inferSelect;
+export type Passkey = typeof passkeys.$inferSelect;
+
+/** The only user fields the client is ever given. */
+export type PublicUser = {
+  id: string;
+  email: string;
+  displayName: string;
+  isDemo: boolean;
+  passkeyCount: number;
+};
+
+/** GET /api/auth/session */
+export type SessionResponse = {
+  user: PublicUser | null;
+  /** True when this session came from a magic link and has no passkey yet. */
+  needsPasskey: boolean;
+  /** Configuration hints that are safe to expose (no secrets). */
+  auth: {
+    magicLinkEnabled: boolean;
+    passkeyEnabled: boolean;
+    /** False when this address cannot run a WebAuthn ceremony (wrong host for the RP ID). */
+    passkeyAvailableHere: boolean;
+    demoEnabled: boolean;
+  };
+};
+
+export const emailRequestSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
+});
+
+export const passkeyLabelSchema = z.object({
+  label: z.string().trim().min(1).max(60).default("Passkey"),
+});
+
+export const challengeIdSchema = z.object({ challengeId: z.string().min(8).max(120) });
+
 /* ---------------------------------------------------------------- project */
 
 export const projects = sqliteTable("projects", {
   id: text("id").primaryKey(),
+  /** Author account that owns this book. Resolved from the session, never sent. */
+  ownerId: text("owner_id").notNull().default(""),
   title: text("title").notNull(),
   subtitle: text("subtitle").notNull().default(""),
   author: text("author").notNull().default(""),

@@ -1,5 +1,7 @@
 # Wordsmithery VPS deployment
 
+*Updated for v0.3 (passwordless authentication and SQLite persistence).*
+
 The GitHub Actions workflow at `wordsmithery-app/.github/workflows/deploy-vps.yml` deploys every successful push to `main`. It checks TypeScript, builds the client and Express server on GitHub Actions, synchronises the release to the VPS over verified SSH, and restarts the `wordsmithery` systemd service.
 
 ## One-time VPS setup
@@ -32,7 +34,8 @@ User=wordsmithery
 WorkingDirectory=/opt/wordsmithery
 Environment=NODE_ENV=production
 Environment=PORT=5000
-EnvironmentFile=-/opt/wordsmithery/.env
+# Required from v0.3 onwards: the service will not start without it.
+EnvironmentFile=/opt/wordsmithery/.env
 ExecStart=/usr/bin/node /opt/wordsmithery/dist/index.cjs
 Restart=on-failure
 RestartSec=5
@@ -48,7 +51,42 @@ sudo systemctl daemon-reload
 sudo systemctl enable wordsmithery
 ```
 
-Place runtime configuration in `/opt/wordsmithery/.env`. The workflow deliberately excludes this file, `data.db`, and `node_modules` from deletion. The current demo uses memory storage; when durable SQLite storage is enabled, keep its database in the excluded `data.db` path or move it to a managed volume.
+Place runtime configuration in `/opt/wordsmithery/.env`, owned by the service user with `chmod 600`. The workflow deliberately excludes this file, the database and `node_modules` from deletion.
+
+From v0.3 the application stores accounts, sessions, passkeys and every book in SQLite, so the database is now real data rather than a demo cache. Keep it outside the release tree:
+
+```bash
+sudo -u wordsmithery mkdir -p /opt/wordsmithery/data
+sudo chmod 700 /opt/wordsmithery/data
+# in .env
+# DATABASE_PATH=/opt/wordsmithery/data/wordsmithery.db
+```
+
+Confirm the deploy workflow's rsync exclusions cover both `.env` and the `data/` directory before the first v0.3 release. Back the database up separately from code — see [`wordsmithery-security-notes.md`](wordsmithery-security-notes.md).
+
+## Required VPS environment values (v0.3)
+
+These live only in `/opt/wordsmithery/.env` on the server. **Do not add any of them to GitHub Actions secrets or variables** — the workflow builds and copies code, and never needs application secrets. `wordsmithery-app/.env.example` is the annotated template.
+
+| Variable | Required | Value for this deployment |
+| --- | --- | --- |
+| `NODE_ENV` | yes | `production` |
+| `PORT` | no (default `5000`) | `5000` |
+| `APP_URL` | **yes** | `https://littechnia.com` — must be `https://` |
+| `DATABASE_PATH` | no (default `./data.db`) | `/opt/wordsmithery/data/wordsmithery.db` |
+| `PASSKEY_RP_ID` | **yes** | `littechnia.com` — registrable domain, no scheme or port |
+| `PASSKEY_RP_NAME` | no | `Wordsmithery` |
+| `PASSKEY_ORIGIN` | no | defaults to `APP_URL`; set only if the origin differs |
+| `TRUSTED_ORIGINS` | no | comma-separated extra origins, e.g. a staging host |
+| `RESEND_API_KEY` | **yes** | restricted sending key from Resend |
+| `EMAIL_FROM` | **yes** | `Wordsmithery <no-reply@littechnia.com>`, verified in Resend |
+| `SESSION_COOKIE_NAME` | no | `wordsmithery_session` |
+| `SESSION_TTL_DAYS` | no | `30` (1–90) |
+| `MAGIC_LINK_TTL_MINUTES` | no | `15` (clamped 5–60) |
+| `DEV_ECHO_MAGIC_LINK` | **must be absent** | development only; the server exits if set in production |
+| `WORDSMITHERY_DEMO_SEED` | **must be absent** | development only; the server exits if set in production |
+
+A missing required value is not a silent degradation: the process prints the exact names and exits with status 1, leaving the previous release running if you deploy without restarting.
 
 Put the GitHub Actions public key in `~wordsmithery/.ssh/authorized_keys` on the VPS. Use an Ed25519 key dedicated to this repository, not a personal administrator key.
 
@@ -66,6 +104,14 @@ Create these repository secrets under **Settings → Secrets and variables → A
 
 Optionally create a repository variable named `VPS_PORT`; it defaults to `22`.
 
+## GitHub Actions: what to preserve
+
+The workflow at `wordsmithery-app/.github/workflows/deploy-vps.yml` stays as it is. It needs exactly the five secrets and one variable listed below, all of which describe *how to reach the server* — never application configuration.
+
+- Keep: `VPS_HOST`, `VPS_USER`, `VPS_APP_PATH`, `VPS_SSH_KEY`, `VPS_KNOWN_HOSTS`, and the optional `VPS_PORT` variable.
+- Do not add: `RESEND_API_KEY`, `EMAIL_FROM`, `APP_URL`, `PASSKEY_RP_ID` or anything else from `.env`. If a future workflow step appears to need them, it is doing something that belongs on the server.
+- Keep the rsync exclusions for `.env`, the database path and `node_modules`, so a deploy can never delete accounts or books.
+
 ## First release
 
 After the service and secrets are ready, push a commit to `main`, or run **Deploy Wordsmithery to VPS** manually from GitHub Actions. The workflow runs `npm run check` and `npm run build` before it uploads anything. A failed check or build leaves the active VPS release untouched.
@@ -78,5 +124,8 @@ Put Caddy or Nginx in front of port 5000 for HTTPS. The application service shou
 
 - **Rollbacks** — GitHub retains the commit history. Revert the faulty commit and push `main`; the workflow redeploys the previous source.
 - **Logs** — On the VPS, inspect `sudo journalctl -u wordsmithery -f`.
-- **Backups** — Back up the application `.env` and the eventual durable project-data volume independently of code deploys.
+- **Backups** — Back up `/opt/wordsmithery/.env` and `DATABASE_PATH` independently of code deploys, using `sqlite3 … ".backup"` rather than a plain file copy. Backups contain every author's manuscript: store them encrypted.
+- **Health check** — `curl -s https://littechnia.com/api/health` must report `"demoEnabled":false`. If it reports `true`, a development switch reached production.
+- **Sign everyone out** — stop the service and `DELETE FROM sessions;` in the database. Full procedure in the security notes.
+- **Passkey domain** — `PASSKEY_RP_ID` is part of every stored credential. Changing the domain invalidates every passkey and forces authors back through the email link. Do not change it casually.
 - **Security** — Keep `VPS_KNOWN_HOSTS` pinned and never replace it with disabled host-key checking. Rotate the dedicated deploy key if it is exposed.
