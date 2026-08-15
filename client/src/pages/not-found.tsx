@@ -3,7 +3,7 @@ import { Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /**
- * Wordsmithery has no dead ends: an unknown route explains itself in plain
+ * LitTechnia has no dead ends: an unknown route explains itself in plain
  * language and hands the writer a way back to the workshop.
  */
 export default function NotFound() {
@@ -14,7 +14,7 @@ export default function NotFound() {
         That page isn&apos;t part of the workshop
       </h1>
       <p className="text-sm text-muted-foreground">
-        The address you followed doesn&apos;t match any room in Wordsmithery. Nothing has been lost
+        The address you followed doesn&apos;t match any room in LitTechnia. Nothing has been lost
         — your project is still loaded exactly as you left it.
       </p>
       <div className="flex flex-wrap gap-2">

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { EyeOff, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { WordsmitheryMark } from "@/components/brand";
+import { LitTechniaMark } from "@/components/brand";
 import { useStoryActions, useSnapshot, useWorkspace, wordCount } from "@/lib/workspace";
 import { useToast } from "@/hooks/use-toast";
 
@@ -67,7 +67,7 @@ export function DraftZeroOverlay() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3 md:px-8">
         <div className="flex items-center gap-3">
           <span className="text-primary">
-            <WordsmitheryMark className="h-5 w-5" />
+            <LitTechniaMark className="h-5 w-5" />
           </span>
           <div>
             <p className="eyebrow">Draft zero · private</p>
@@ -108,7 +108,7 @@ export function DraftZeroOverlay() {
           >
             <EyeOff className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
             <span>
-              Nothing here is critiqued, scored, shared or generated. Wordsmithery will not write,
+              Nothing here is critiqued, scored, shared or generated. LitTechnia will not write,
               rewrite, continue or assess this text. Draft zero exists so you can tell yourself the
               story badly and privately, and come back to it later with distance.
             </span>

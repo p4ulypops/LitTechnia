@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Field, ListSkeleton, Panel, StatusPill } from "@/components/fields";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { LinkPanel } from "@/components/links";
 import { AttachmentArea } from "@/components/attachments";
 import { CraftLens, RestoreLensesButton, lenses } from "@/components/craft-lens";
@@ -315,19 +316,28 @@ export default function ManuscriptPage() {
                   >
                     <EyeOff className="mr-1.5 h-3.5 w-3.5" /> Draft Zero
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    aria-label={`Delete ${scene.title}`}
-                    data-testid="button-delete-scene"
-                    onClick={async () => {
+                  <ConfirmDialog
+                    testId="delete-scene"
+                    title={`Delete "${scene.title}"?`}
+                    description="This removes the scene and its text permanently. Any links to it from characters, plots or the timeline are removed too. This cannot be undone."
+                    confirmLabel="Delete scene"
+                    pendingLabel="Deleting…"
+                    onConfirm={async () => {
                       await actions.remove("scenes", scene.id);
                       select("scene", null);
                     }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    trigger={
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        aria-label={`Delete ${scene.title}`}
+                        data-testid="button-delete-scene"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
                 </>
               }
             >

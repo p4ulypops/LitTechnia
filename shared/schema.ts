@@ -387,7 +387,52 @@ export const collections = [
 export type CollectionName = (typeof collections)[number];
 
 /** Documented shape of the single-book JSON snapshot export. */
-export const SNAPSHOT_FORMAT_VERSION = "wordsmithery-project/0.2";
+export const SNAPSHOT_FORMAT_VERSION = "littechnia-project/0.2";
 
 /** Documented shape of the whole-library JSON snapshot export. */
-export const LIBRARY_FORMAT_VERSION = "wordsmithery-library/0.2";
+export const LIBRARY_FORMAT_VERSION = "littechnia-library/0.2";
+
+/* -------------------------------------------------------------- connections */
+
+/**
+ * Capability-gated states for the opt-in Connections surface. The server is
+ * the only thing that computes these -- the browser never inspects an
+ * environment key directly, per docs/ux/connections-release-mechanics.md.
+ *
+ *   available        an enabled Connect/Export control, real today.
+ *   file_based       a real, working no-account file/feed capability.
+ *   handoff_only     no fake Connect button; the real path is described.
+ *   setup_required   the feature is built; this deployment just needs an
+ *                     admin-provided key or flag.
+ *   blocked_security the feature is not safe to enable yet (no encrypted
+ *                     credential storage and/or the adapter isn't built).
+ *   unsupported      not available, with a plain-language reason and the
+ *                     nearest safe alternative.
+ */
+export const connectorStates = [
+  "available",
+  "file_based",
+  "handoff_only",
+  "setup_required",
+  "blocked_security",
+  "unsupported",
+] as const;
+export type ConnectorState = (typeof connectorStates)[number];
+
+/** One card on the Connections page. Contains no secrets, ever. */
+export type ConnectorAvailability = {
+  id: string;
+  name: string;
+  category: "file" | "feed" | "publish" | "docs" | "narration" | "video";
+  state: ConnectorState;
+  /** What this connector does, in one sentence. */
+  summary: string;
+  /** Why it is in this state right now -- always shown, never a bare label. */
+  reason: string;
+  /** Present only for handoff_only/file_based cards with a real, safe next step. */
+  actionLabel?: string;
+  /** An in-app route only -- never an external URL guessed by the server. */
+  actionHref?: string;
+};
+
+export type ConnectionsResponse = { connectors: ConnectorAvailability[] };

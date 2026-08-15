@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, ListSkeleton, Panel, StatusPill } from "@/components/fields";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CraftLens, RestoreLensesButton, lenses } from "@/components/craft-lens";
 import { useAuth } from "@/lib/auth";
 import {
@@ -37,7 +38,7 @@ function FirstRun() {
         </h1>
         <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
           Nothing is here yet, and nothing is borrowed from anyone else. Start a book and
-          Wordsmithery will hold its manuscript, characters, plot threads, timeline, world notes and
+          LitTechnia will hold its manuscript, characters, plot threads, timeline, world notes and
           research in one place — without writing a word of it for you.
         </p>
       </header>
@@ -155,7 +156,7 @@ export default function HomePage() {
           <p className="font-medium">This book is empty, which is a fine place to start.</p>
           <p className="mt-1 text-muted-foreground">
             Nothing from your other books leaks in here. Write a first scene in the Manuscript, or use
-            the import wizard to bring in notes and drafts you already have. Wordsmithery will not
+            the import wizard to bring in notes and drafts you already have. LitTechnia will not
             write any of it for you.
           </p>
         </div>
@@ -309,15 +310,26 @@ export default function HomePage() {
                         {item.label}
                       </span>
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => actions.remove("checklist", item.id)}
-                      aria-label={`Delete checklist item ${item.label}`}
-                      data-testid={`button-delete-checklist-${item.id}`}
-                      className="rounded-sm p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <ConfirmDialog
+                      testId={`checklist-${item.id}`}
+                      title={`Delete "${item.label}"?`}
+                      description="This removes the checklist item permanently. This cannot be undone."
+                      confirmLabel="Delete item"
+                      pendingLabel="Deleting…"
+                      onConfirm={async () => {
+                        await actions.remove("checklist", item.id);
+                      }}
+                      trigger={
+                        <button
+                          type="button"
+                          aria-label={`Delete checklist item ${item.label}`}
+                          data-testid={`button-delete-checklist-${item.id}`}
+                          className="rounded-sm p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      }
+                    />
                   </li>
                 ))}
             </ul>

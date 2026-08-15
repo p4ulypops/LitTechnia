@@ -1,8 +1,8 @@
-# Wordsmithery — prototype v0.3
+# LitTechnia — prototype v0.3
 
 A local-first, author-owned writing workspace for first-time novelists, initially friendly to fantasy and science fiction. Import and organise notes, develop characters, plot, timeline and worldbuilding, draft chapters and scenes privately, and export material you own.
 
-**Wordsmithery never writes for you.** It does not generate scenes, chapters, dialogue, endings or prose, and it does not critique or score your writing. There are no AI surfaces anywhere in this prototype. Every craft prompt is optional and dismissible, and planners and discovery writers are treated as equals.
+**LitTechnia never writes for you.** It does not generate scenes, chapters, dialogue, endings or prose, and it does not critique or score your writing. There are no AI surfaces anywhere in this prototype. Every craft prompt is optional and dismissible, and planners and discovery writers are treated as equals.
 
 ---
 
@@ -138,7 +138,7 @@ Design direction: warm paper surfaces, deep night-ink text, a restrained oxblood
 - **Planning workspaces** — characters (motivation, wants, fears, wins, losses, arc, voice), plots (kind, stakes, status, setups, payoffs, open question), timeline (ordering plus fixed/approximate/unplaced confidence), worldbuilding (facts, rules, limits, costs, exceptions), research notes. Links are visible and navigable from both ends.
 - **Draft Zero** — a full-screen private mode that says outright that nothing here is critiqued, scored, shared or generated. Save and exit controls; Escape exits, Ctrl/⌘+S saves.
 - **Attachments** — browser file picker recording name, type and size, labelled as session-only.
-- **Portability** — per-book Markdown manuscript, clean semantic HTML, narration script and a documented JSON snapshot (`wordsmithery-project/0.2`, `scope: "selected-project"`), each with Download, Copy text and Preview so an export is never trapped in the app; plus a whole-library snapshot (`wordsmithery-library/0.2`, `scope: "library"`) holding every book, archived ones included, under `projects[]`. Both JSON envelopes carry a documentation block that states the project boundary explicitly.
+- **Portability** — per-book Markdown manuscript, clean semantic HTML, narration script and a documented JSON snapshot (`littechnia-project/0.2`, `scope: "selected-project"`), each with Download, Copy text and Preview so an export is never trapped in the app; plus a whole-library snapshot (`littechnia-library/0.2`, `scope: "library"`) holding every book, archived ones included, under `projects[]`. Both JSON envelopes carry a documentation block that states the project boundary explicitly.
 - **Progress** — informational only. No streaks, no daily quotas, no penalties.
 - **Accounts** — passkey-first sign-in page, email-link fallback, a passkey naming step after a verified link, an Account page listing passkeys with created/last-used dates and removal (refusing to remove the last one), sign-out in the header and on the account page, and a welcome screen for a brand-new empty library.
 - **Craft lenses** — dismissible per-page prompts split into "if you are planning" / "if you are discovering", with a restore control.

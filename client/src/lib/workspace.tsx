@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type {
   CollectionName,
+  ConnectionsResponse,
   EntityKind,
   ImportItem,
   ImportResult,
@@ -30,6 +31,14 @@ export function useLibrarySnapshots() {
   return useQuery<{ projects: ProjectSnapshot[] }>({
     queryKey: ["/api/library", "snapshots"],
   });
+}
+
+/**
+ * Connections availability, server-computed and non-secret. See
+ * server/connectors.ts and docs/ux/connections-release-mechanics.md.
+ */
+export function useConnections() {
+  return useQuery<ConnectionsResponse>({ queryKey: ["/api/connections"] });
 }
 
 function snapshotKey(projectId: string) {

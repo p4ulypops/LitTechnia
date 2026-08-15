@@ -18,6 +18,7 @@ import { registerAuthRoutes } from "./auth/routes";
 import { attachSession, checkOrigin, requireAuth } from "./auth/session";
 import { isDemoOwner } from "./auth/demo";
 import { env, publicAuthConfig, requestHostname } from "./env";
+import { resolveConnectors } from "./connectors";
 import {
   collections,
   importRequestSchema,
@@ -90,6 +91,17 @@ export async function registerRoutes(
   // From here down every /api route requires a signed-in author.
   app.use("/api/projects", requireAuth);
   app.use("/api/library", requireAuth);
+  app.use("/api/connections", requireAuth);
+
+  /* ------------------------------------------------------------- connections */
+
+  /**
+   * Non-secret, server-computed availability only -- see server/connectors.ts.
+   * The browser never inspects an environment key directly.
+   */
+  app.get("/api/connections", (_req, res) => {
+    res.json({ connectors: resolveConnectors() });
+  });
 
   /* ----------------------------------------------------------------- library */
 

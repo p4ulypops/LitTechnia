@@ -11,9 +11,11 @@
  *   - localhost RP id/origin so a local virtual authenticator can be used
  *   - the demo library is *off* unless WORDSMITHERY_DEMO_SEED=true
  */
-const truthy = (value: string | undefined) =>
+export const truthy = (value: string | undefined) =>
   value !== undefined &&
   ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
+
+const present = (value: string | undefined) => Boolean((value ?? "").trim());
 
 export type AppEnv = {
   nodeEnv: "development" | "production" | "test";
@@ -38,6 +40,19 @@ export type AppEnv = {
   /** Development only: seed the demo library under a demo owner. */
   demoSeed: boolean;
   demoOwnerEmail: string;
+  /**
+   * Non-secret connector configuration, resolved once at startup. Every field
+   * here is a boolean or a flag list -- never a key value -- because
+   * server/connectors.ts sends its output (not this object) to the browser.
+   * See docs/ux/connections-release-mechanics.md.
+   */
+  connectorsEnabled: boolean;
+  credentialEncryptionConfigured: boolean;
+  googleOAuthConfigured: boolean;
+  microsoftOAuthConfigured: boolean;
+  wordpressComOAuthConfigured: boolean;
+  youtubeOAuthConfigured: boolean;
+  elevenLabsConfigured: boolean;
 };
 
 class ConfigError extends Error {}
@@ -88,7 +103,7 @@ export function loadEnv(env: NodeJS.ProcessEnv = process.env): AppEnv {
   );
   const rpId = require("PASSKEY_RP_ID", env.PASSKEY_RP_ID) || "localhost";
   const rpName =
-    (env.PASSKEY_RP_NAME ?? "Wordsmithery").trim() || "Wordsmithery";
+    (env.PASSKEY_RP_NAME ?? "LitTechnia").trim() || "LitTechnia";
   const resendApiKey = require("RESEND_API_KEY", env.RESEND_API_KEY);
   const emailFrom = require("EMAIL_FROM", env.EMAIL_FROM);
   const devEchoMagicLink = truthy(env.DEV_ECHO_MAGIC_LINK);
@@ -105,7 +120,7 @@ export function loadEnv(env: NodeJS.ProcessEnv = process.env): AppEnv {
   }
   if (missing.length) {
     throw new ConfigError(
-      `Wordsmithery cannot start: invalid configuration.\n  - ${missing.join("\n  - ")}\n` +
+      `LitTechnia cannot start: invalid configuration.\n  - ${missing.join("\n  - ")}\n` +
         `See .env.example and docs/wordsmithery-vps-deployment.md.`,
     );
   }
@@ -135,6 +150,25 @@ export function loadEnv(env: NodeJS.ProcessEnv = process.env): AppEnv {
     demoOwnerEmail: (env.WORDSMITHERY_DEMO_EMAIL ?? "demo@localhost")
       .trim()
       .toLowerCase(),
+    connectorsEnabled: truthy(env.CONNECTORS_ENABLED),
+    credentialEncryptionConfigured: present(env.CREDENTIAL_ENCRYPTION_KEY),
+    googleOAuthConfigured:
+      present(env.GOOGLE_OAUTH_CLIENT_ID) &&
+      present(env.GOOGLE_OAUTH_CLIENT_SECRET) &&
+      present(env.GOOGLE_OAUTH_REDIRECT_URI),
+    microsoftOAuthConfigured:
+      present(env.MICROSOFT_OAUTH_CLIENT_ID) &&
+      present(env.MICROSOFT_OAUTH_CLIENT_SECRET) &&
+      present(env.MICROSOFT_OAUTH_REDIRECT_URI),
+    wordpressComOAuthConfigured:
+      present(env.WORDPRESS_COM_CLIENT_ID) &&
+      present(env.WORDPRESS_COM_CLIENT_SECRET) &&
+      present(env.WORDPRESS_COM_REDIRECT_URI),
+    youtubeOAuthConfigured:
+      present(env.YOUTUBE_OAUTH_CLIENT_ID) &&
+      present(env.YOUTUBE_OAUTH_CLIENT_SECRET) &&
+      present(env.YOUTUBE_OAUTH_REDIRECT_URI),
+    elevenLabsConfigured: present(env.ELEVENLABS_API_KEY),
   };
 }
 

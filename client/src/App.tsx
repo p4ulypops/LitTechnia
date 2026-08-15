@@ -21,6 +21,7 @@ import TimelinePage from "@/pages/timeline";
 import WorldPage from "@/pages/world";
 import ResearchPage from "@/pages/research";
 import ExportsPage from "@/pages/exports";
+import ConnectionsPage from "@/pages/connections";
 import NotFound from "@/pages/not-found";
 
 function AppRouter() {
@@ -36,6 +37,7 @@ function AppRouter() {
       <Route path="/worldbuilding" component={WorldPage} />
       <Route path="/research" component={ResearchPage} />
       <Route path="/exports" component={ExportsPage} />
+      <Route path="/connections" component={ConnectionsPage} />
       <Route path="/account" component={AccountRoute} />
       <Route path="/passkey-setup" component={PasskeySetupPage} />
       <Route component={NotFound} />

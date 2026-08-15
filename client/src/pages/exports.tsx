@@ -176,7 +176,7 @@ export default function ExportsPage() {
               libraryData &&
               setLast(
                 downloadText(
-                  "wordsmithery-library.json",
+                  "littechnia-library.json",
                   "application/json",
                   buildLibraryJson(libraryData.projects),
                 ),

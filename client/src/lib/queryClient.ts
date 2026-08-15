@@ -7,7 +7,7 @@ const API_BASE = "__PORT_5000__".startsWith("__") ? "" : "__PORT_5000__";
  * re-checks the session, so an expired cookie surfaces the sign-in page rather
  * than a page of broken panels.
  */
-export const UNAUTHENTICATED_EVENT = "wordsmithery:unauthenticated";
+export const UNAUTHENTICATED_EVENT = "littechnia:unauthenticated";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {

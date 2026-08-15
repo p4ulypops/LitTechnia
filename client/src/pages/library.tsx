@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { EmptyState, ListSkeleton, Panel, StatusPill } from "@/components/fields";
 import { useLibrary, useLibraryActions, useWorkspace } from "@/lib/workspace";
 import type { ProjectSummary } from "@shared/schema";
@@ -106,15 +107,27 @@ function BookCard({ book }: { book: ProjectSummary }) {
             >
               <FileUp className="mr-1.5 h-3.5 w-3.5" /> Import files
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={actions.pending}
-              data-testid={`button-archive-${book.id}`}
-              onClick={() => actions.setArchived(book.id, 1)}
-            >
-              <Archive className="mr-1.5 h-3.5 w-3.5" /> Archive
-            </Button>
+            <ConfirmDialog
+              testId={`archive-${book.id}`}
+              title={`Archive "${book.title}"?`}
+              description="Archiving is a state on the book, not a delete — nothing here removes your words. The book moves off the active shelf, and you can bring it back any time from the archive below."
+              confirmLabel="Archive"
+              pendingLabel="Archiving…"
+              tone="neutral"
+              onConfirm={async () => {
+                await actions.setArchived(book.id, 1);
+              }}
+              trigger={
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={actions.pending}
+                  data-testid={`button-archive-${book.id}`}
+                >
+                  <Archive className="mr-1.5 h-3.5 w-3.5" /> Archive
+                </Button>
+              }
+            />
           </>
         ) : (
           <Button

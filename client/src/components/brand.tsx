@@ -1,12 +1,12 @@
-/** Wordsmithery mark: a nib-cut W on a page rule, with a single ink point. */
-export function WordsmitheryMark({ className = "h-7 w-7" }: { className?: string }) {
+/** LitTechnia mark: a nib-cut ink stroke on a page rule, with a single ink point. */
+export function LitTechniaMark({ className = "h-7 w-7" }: { className?: string }) {
   return (
     <svg
       className={className}
       viewBox="0 0 32 32"
       fill="none"
       role="img"
-      aria-label="Wordsmithery"
+      aria-label="LitTechnia"
       data-testid="img-logo"
     >
       <path
@@ -22,14 +22,14 @@ export function WordsmitheryMark({ className = "h-7 w-7" }: { className?: string
   );
 }
 
-export function WordsmitheryLockup() {
+export function LitTechniaLockup() {
   return (
     <span className="flex items-center gap-2.5">
       <span className="text-primary">
-        <WordsmitheryMark className="h-7 w-7" />
+        <LitTechniaMark className="h-7 w-7" />
       </span>
       <span className="font-serif text-lg font-medium leading-none tracking-tight">
-        Wordsmithery
+        LitTechnia
       </span>
     </span>
   );
