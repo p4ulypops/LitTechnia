@@ -1,11 +1,11 @@
-# Wordsmithery — Implementation Plan v0.2
+# Lit Technica — Implementation Plan v0.2
 
 **Status:** working browser prototype, multi-book workspace built and QA'd (2026-08-04)
-**Supersedes:** v0.1 of this plan (same path, renamed; a stub remains at `wordsmithery-implementation-plan-v0.1.md`)
-**Prototype path:** `projects/book-writer-.../files/wordsmithery-app`
-**Companion docs:** `wordsmithery-prd-v0.1.md` (product definition), `wordsmithery-craft-research-2026-08-04.md` (craft sources)
+**Supersedes:** v0.1 of this plan (same path, renamed; a stub remains at `lit-technica-implementation-plan-v0.1.md`)
+**Prototype path:** `projects/book-writer-.../files/lit-technica-app`
+**Companion docs:** `lit-technica-prd-v0.1.md` (product definition), `lit-technica-craft-research-2026-08-04.md` (craft sources)
 
-Wordsmithery is a local-first, author-owned writing workspace for first-time novelists, initially friendly to fantasy and science fiction. It is a creative tool, not a ghostwriter: **the application never generates scenes, chapters, dialogue, endings, or prose**, and this prototype contains no AI surfaces at all. Every craft prompt in the interface is optional, dismissible, and phrased so that planners and discovery writers are both first-class.
+Lit Technica is a local-first, author-owned writing workspace for first-time novelists, initially friendly to fantasy and science fiction. It is a creative tool, not a ghostwriter: **the application never generates scenes, chapters, dialogue, endings, or prose**, and this prototype contains no AI surfaces at all. Every craft prompt in the interface is optional, dismissible, and phrased so that planners and discovery writers are both first-class.
 
 v0.2 adds the two things v0.1 explicitly could not prove: **several books open in one workspace**, and an **import process an author can actually trust** — scan, review, correct, then confirm.
 
@@ -19,7 +19,7 @@ v0.2 adds the two things v0.1 explicitly could not prove: **several books open i
 | Scoping | Every record already carried `projectId`, but only one project existed | Every read and write is project-scoped through the URL: `/api/projects/:projectId/...`. Switching books swaps manuscript, planning workspaces, dashboard, readiness checks and exports |
 | Import | Single file, single note, inline on the Research page | Three-stage wizard at `/#/import`: choose (multi-select or sample files) → review (per-item editable title and classification, preview, include toggle, skip reasons) → imported (per-item receipts, links to the created records) |
 | Classification | Filed everything as a research note | Deterministic filename/heading heuristic across six kinds (scene, character, plot, timeline event, worldbuilding, note), each with a stated reason and an overridable dropdown |
-| Portability | JSON snapshot `wordsmithery-project/0.1` | Per-book snapshot `wordsmithery-project/0.2` with an explicit `scope` field, plus a whole-library snapshot `wordsmithery-library/0.2` containing every book under `projects[]` |
+| Portability | JSON snapshot `lit-technica-project/0.1` | Per-book snapshot `lit-technica-project/0.2` with an explicit `scope` field, plus a whole-library snapshot `lit-technica-library/0.2` containing every book under `projects[]` |
 | Dashboard | Assumed a populated project | Handles a genuinely empty book: disabled Draft Zero with an explanation, empty "Recent work" state, empty-book banner, no phantom "(deleted)" labels |
 
 Preserved from v0.1 without regression: literary design tokens and Fontshare typography, draft-zero safeguards, dark mode, mobile drawer, scroll reset on navigation, skip-to-content button, 404 recovery, all previous routes and testids.
@@ -61,7 +61,7 @@ Unchanged from v0.1 except where noted.
 
 ## 4. Data model
 
-Ten record types, all with stable string ids and `projectId` scoping. Full definitions in `wordsmithery-app/shared/schema.ts`.
+Ten record types, all with stable string ids and `projectId` scoping. Full definitions in `lit-technica-app/shared/schema.ts`.
 
 ### Changes in v0.2
 
@@ -79,7 +79,7 @@ New shared types and contracts:
 - `newProjectSchema` — title required (1–120 chars); subtitle, genre, format, author, premise, method, wordTarget optional.
 - `ProjectCounts` / `ProjectSummary` / `LibrarySnapshot` — the library list is counts only (scenes, characters, plots, events, world, notes, links, words), never full book contents, so the switcher stays cheap.
 - `importKinds` = scene | character | plot | event | world | note; `importItemSchema` { kind, title, body, fileName }; `importRequestSchema` { items: 1–50 }; `ImportResult` { projectId, created[] }.
-- `SNAPSHOT_FORMAT_VERSION = "wordsmithery-project/0.2"`, `LIBRARY_FORMAT_VERSION = "wordsmithery-library/0.2"`.
+- `SNAPSHOT_FORMAT_VERSION = "lit-technica-project/0.2"`, `LIBRARY_FORMAT_VERSION = "lit-technica-library/0.2"`.
 
 Design rules carried forward: prose is plain Markdown-compatible text in one field; `setups`, `payoffs`, `tags` are JSON text columns (SQLite has no array type); relationships are rows in `links` so either end can add or remove one; deleting a record cascades its links.
 
@@ -101,11 +101,11 @@ Design rules carried forward: prose is plain Markdown-compatible text in one fie
 Two documented JSON envelopes, both carrying `format`, `scope`, `exportedAt` and a `documentation` block:
 
 ```
-wordsmithery-project/0.2   scope: "selected-project"
+lit-technica-project/0.2   scope: "selected-project"
   { format, scope, exportedAt, documentation, project, scenes, characters,
     plots, events, world, notes, links, attachments, checklist }
 
-wordsmithery-library/0.2   scope: "library"
+lit-technica-library/0.2   scope: "library"
   { format, scope, exportedAt, documentation, projectCount,
     projects: [ { project, scenes, ... , checklist }, ... ] }
 ```
@@ -117,7 +117,7 @@ Mapping to the PRD folder format — one folder per book, unchanged from v0.1:
 ```
 My Novel/
   README.md                     <- generated from project fields
-  wordsmithery-project.json     <- the per-book JSON snapshot, verbatim
+  lit-technica-project.json     <- the per-book JSON snapshot, verbatim
   manuscript/NN-scene-title.md  <- scenes[].content + front matter
   story/characters|plots|timeline|world|research/*.md
   media/                        <- attachments (prototype records metadata only)
@@ -190,7 +190,7 @@ Executed against the production build (`NODE_ENV=production node dist/index.cjs`
 | 16 | Confirm creates the records and reports them | `button-import-confirm` | pass ("3 items imported into Salt and Signal. They appear only in this book.") |
 | 17 | Imported records appear only in the active book | compared both books after import | pass (Ada Mireille import in Salt and Signal only; Glass Meridian characters unchanged) |
 | 18 | Import into a second book stays separate | 2 items into The Glass Meridian | pass (timeline gained "Timeline of the flood year", unplaced) |
-| 19 | Export page states its scope | `/#/exports` | pass ("contain The Glass Meridian only … `wordsmithery-project/0.2`") |
+| 19 | Export page states its scope | `/#/exports` | pass ("contain The Glass Meridian only … `lit-technica-project/0.2`") |
 | 20 | Library JSON export covers every book | `button-export-library-json` | pass (3 books, 37,074 bytes measured — an earlier draft of this table said 39,191, which was wrong; download triggered, labelled "Library snapshot (all books)") |
 | 21 | Mobile drawer still opens, holds the switcher, and closes on switch | 390×844, waited for `left === 0` | pass (switched to Salt and Signal, drawer unmounted) |
 | 22 | Mobile library and import wizard usable at 390 px | full-page screenshots | pass (no overflow; review rows stack) |
@@ -200,7 +200,7 @@ Executed against the production build (`NODE_ENV=production node dist/index.cjs`
 | 26 | Reset restores the seeded library | `button-reset-demo` | pass (created books discarded, 3 seeded books returned) |
 | 27 | Typecheck and production build | `npm run check`, `npm run build` | pass (no TS errors; measured at the time: JS 750,681 B raw / 211,866 B gzip, CSS 87,893 B raw / 13,980 B gzip) |
 
-Screenshots: `/home/user/workspace/wordsmithery-qa-v02-desktop-library.jpg`, `-desktop-library-dark.jpg`, `-desktop-import-review.jpg`, `-mobile-drawer.jpg`, `-mobile-library.jpg`, `-mobile-import-review.jpg`, `-mobile-import-done.jpg`. Fixtures for the picker test: `/home/user/workspace/wordsmithery-import-fixtures/`.
+Screenshots: `/home/user/workspace/lit-technica-qa-v02-desktop-library.jpg`, `-desktop-library-dark.jpg`, `-desktop-import-review.jpg`, `-mobile-drawer.jpg`, `-mobile-library.jpg`, `-mobile-import-review.jpg`, `-mobile-import-done.jpg`. Fixtures for the picker test: `/home/user/workspace/lit-technica-import-fixtures/`.
 
 **Defects found and fixed during this QA round**
 
@@ -215,7 +215,7 @@ Screenshots: `/home/user/workspace/wordsmithery-qa-v02-desktop-library.jpg`, `-d
 
 **Risks**
 
-1. *Scope creep toward an editor arms race.* Wordsmithery competes on privacy, ownership and calm. Each new panel must answer "does this help a first novel get finished?"
+1. *Scope creep toward an editor arms race.* Lit Technica competes on privacy, ownership and calm. Each new panel must answer "does this help a first novel get finished?"
 2. *Craft guidance turning prescriptive.* Mitigated by paired planning/discovery prompts and dismissible lenses.
 3. *Import trust.* An importer that silently misfiles material is worse than none. Mitigation: every suggestion states its reason in plain language, every field is editable, nothing is created before confirmation, and skipped files are listed rather than dropped silently.
 4. *Multi-book leakage* would be the most damaging possible bug. Mitigated structurally (per-project snapshot maps, project-scoped routes) and checked in acceptance cases 3–5, 17 and 18. A cross-project link type is deliberately not offered.
