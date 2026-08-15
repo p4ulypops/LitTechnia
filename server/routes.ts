@@ -22,9 +22,12 @@ import { resolveConnectors } from "./connectors";
 import {
   collections,
   importRequestSchema,
+  insertAliasSchema,
   insertAttachmentSchema,
+  insertCaptureItemSchema,
   insertCharacterSchema,
   insertChecklistItemSchema,
+  insertCommentSchema,
   insertEventSchema,
   insertLinkSchema,
   insertNoteSchema,
@@ -51,6 +54,12 @@ const insertSchemas: Record<CollectionName, AnyInsertSchema> = {
   links: insertLinkSchema,
   attachments: insertAttachmentSchema,
   checklist: insertChecklistItemSchema,
+  // v0.3 (Sub-PRD B). These carry polymorphic targetKind/targetId references and
+  // the generic route validates only project ownership, not that the target row
+  // exists inside that project -- see the PR description for that known gap.
+  aliases: insertAliasSchema,
+  comments: insertCommentSchema,
+  captureItems: insertCaptureItemSchema,
 };
 
 const projectPatchSchema = z.object({

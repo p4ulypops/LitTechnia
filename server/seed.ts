@@ -12,7 +12,7 @@
  * Nothing here is generated at runtime; the app never writes prose for a user.
  */
 import type { ProjectSnapshot } from "@shared/schema";
-import { buildArchivedBook, buildSaltAndSignal } from "./seed-books";
+import { buildArchivedBook, buildSaltAndSignal, completeSeed } from "./seed-books";
 
 const P = "glass-meridian";
 
@@ -44,7 +44,7 @@ const scene = (
 });
 
 export function buildGlassMeridian(): ProjectSnapshot {
-  return {
+  return completeSeed({
     project: {
       id: P,
       ownerId: "", // assigned by storage when the demo library is seeded
@@ -459,7 +459,7 @@ Then the entry: Renn, Ilva. Seventh year: blank. Not missing. Blanked, with the 
       { id: "cl-2", projectId: P, label: "Fix the tide table against Chapter Three", done: 0, orderIndex: 1 },
       { id: "cl-3", projectId: P, label: "Name the drowned district", done: 1, orderIndex: 2 },
     ],
-  };
+  });
 }
 
 /**
