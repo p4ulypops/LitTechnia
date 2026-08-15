@@ -3,24 +3,36 @@ name: Deploy LitTechnia to VPS
 on:
   push:
     branches:
-      - main
+      - develop
   workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy"
+        required: true
+        default: dev
+        type: choice
+        options:
+          - dev
+          - main
 
 concurrency:
-  group: wordsmithery-production
+  group: littechnia-${{ github.event.inputs.environment || 'dev' }}
   cancel-in-progress: true
-
-permissions:
-  contents: read
 
 jobs:
   deploy:
-    name: Build and deploy
+    name: Build and deploy (${{ github.event.inputs.environment || 'dev' }})
     runs-on: ubuntu-latest
+    # Pushes to `develop` always deploy to dev automatically.
+    # Deploys to production (`main`) only happen via manual workflow_dispatch,
+    # gated by the `production` GitHub Environment's required reviewers.
+    environment: ${{ (github.event.inputs.environment == 'main') && 'production' || 'development' }}
     env:
+      TARGET_ENV: ${{ github.event.inputs.environment || 'dev' }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
       VPS_USER: ${{ secrets.VPS_USER }}
-      VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
+      VPS_APP_PATH: ${{ (github.event.inputs.environment == 'main') && secrets.VPS_APP_PATH_MAIN || secrets.VPS_APP_PATH_DEV }}
+      VPS_SERVICE: ${{ github.event.inputs.environment == 'main' && 'littechnia-main' || 'littechnia-dev' }}
       VPS_PORT: ${{ vars.VPS_PORT || '22' }}
 
     steps:
@@ -68,6 +80,7 @@ jobs:
             --exclude '.github' \
             --exclude 'node_modules' \
             --exclude 'data.db' \
+            --exclude 'data' \
             -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=yes -p $VPS_PORT" \
             ./ "$VPS_USER@$VPS_HOST:$VPS_APP_PATH/"
 
@@ -76,4 +89,4 @@ jobs:
           set -eu
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=yes -p "$VPS_PORT" \
             "$VPS_USER@$VPS_HOST" \
-            "set -eu; cd '$VPS_APP_PATH'; npm ci --omit=dev; sudo systemctl restart wordsmithery; sudo systemctl is-active --quiet wordsmithery"
+            "set -eu; cd '$VPS_APP_PATH'; npm ci --omit=dev; sudo systemctl restart $VPS_SERVICE; sudo systemctl is-active --quiet $VPS_SERVICE"
