@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { SaveStatusText, useSaveStatus } from "@/components/save-status";
 
 type FieldProps = {
   label: string;
@@ -35,7 +35,7 @@ export function Field({
   prose = false,
 }: FieldProps) {
   const [draft, setDraft] = useState(value);
-  const [saved, setSaved] = useState(false);
+  const status = useSaveStatus();
 
   useEffect(() => {
     setDraft(value);
@@ -43,9 +43,7 @@ export function Field({
 
   const commit = async () => {
     if (draft === value) return;
-    await onSave(draft);
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 1800);
+    await status.run(async () => onSave(draft));
   };
 
   const shared = {
@@ -70,14 +68,13 @@ export function Field({
         <Label htmlFor={testId} className="eyebrow">
           {label}
         </Label>
-        {saved && (
-          <span
-            className="flex items-center gap-1 text-xs text-muted-foreground"
-            data-testid={`status-saved-${testId}`}
-          >
-            <Check className="h-3 w-3" /> saved
-          </span>
-        )}
+        <SaveStatusText
+          state={status.state}
+          error={status.error}
+          testId={testId}
+          savedLabel="saved"
+          onRetry={commit}
+        />
       </div>
       {multiline ? (
         <Textarea
