@@ -11,6 +11,7 @@ import {
   Library,
   NotebookPen,
   LogOut,
+  Plug,
   UserRound,
   Users,
   Wand2,
@@ -54,6 +55,7 @@ const nav = [
   { href: "/research", label: "Research", icon: NotebookPen, group: "Material" },
   { href: "/import", label: "Import", icon: FileUp, group: "Material" },
   { href: "/exports", label: "Exports", icon: Download, group: "Material" },
+  { href: "/connections", label: "Connections", icon: Plug, group: "Material" },
   { href: "/account", label: "Account", icon: UserRound, group: "Material" },
 ];
 

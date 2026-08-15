@@ -16,7 +16,7 @@ import {
   type ProjectSnapshot,
 } from "@shared/schema";
 
-export type ExportKind = "markdown" | "html" | "narration" | "json";
+export type ExportKind = "markdown" | "html" | "narration" | "json" | "rss" | "atom";
 
 const parseList = (json: string): string[] => {
   try {
@@ -140,6 +140,91 @@ export function buildNarration(snapshot: ProjectSnapshot): string {
   return out.join("\n");
 }
 
+/**
+ * Scenes eligible for the RSS/Atom feed: marked "Ready to read" and not
+ * draft-zero material, which is private by default and never syndicated.
+ */
+function feedScenes(snapshot: ProjectSnapshot) {
+  return orderedScenes(snapshot).filter(
+    (scene) => scene.status === "ready" && scene.draftZero !== 1,
+  );
+}
+
+function feedChannelLink(): string {
+  return typeof window !== "undefined" && window.location?.origin
+    ? window.location.origin
+    : "https://littechnia.com";
+}
+
+/**
+ * RSS 2.0 feed, built entirely in the browser from the live snapshot -- no
+ * account, no server round trip. There is no per-scene timestamp in this
+ * prototype's schema, so every item shares one "generated at" pubDate rather
+ * than a fabricated distinct one; the Connections page says so explicitly.
+ * Item guids are non-permalink (isPermaLink="false") because this feed is
+ * not hosted at a stable public URL by LitTechnia itself -- the author hosts
+ * or hands off the generated file.
+ */
+export function buildRss(snapshot: ProjectSnapshot): string {
+  const { project } = snapshot;
+  const scenes = feedScenes(snapshot);
+  const generatedAt = new Date().toUTCString();
+  const channelLink = feedChannelLink();
+  const items = scenes
+    .map(
+      (scene) => `    <item>
+      <title>${escapeHtml(scene.title)}</title>
+      <guid isPermaLink="false">urn:littechnia:scene:${escapeHtml(project.id)}:${escapeHtml(scene.id)}</guid>
+      <pubDate>${generatedAt}</pubDate>
+      <description>${escapeHtml(scene.content.trim() || "(not written yet)")}</description>
+    </item>`,
+    )
+    .join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>${escapeHtml(project.title)}</title>
+    <link>${escapeHtml(channelLink)}</link>
+    <description>${escapeHtml(project.subtitle || `${project.title} — a book in progress on LitTechnia.`)}</description>
+    <generator>LitTechnia</generator>
+    <lastBuildDate>${generatedAt}</lastBuildDate>
+${items || '    <!-- No scenes are marked "Ready to read" yet, so this feed has no items. -->'}
+  </channel>
+</rss>
+`;
+}
+
+/**
+ * Atom 1.0 feed, same scope and same single-timestamp honesty note as the
+ * RSS build above.
+ */
+export function buildAtom(snapshot: ProjectSnapshot): string {
+  const { project } = snapshot;
+  const scenes = feedScenes(snapshot);
+  const generatedAt = new Date().toISOString();
+  const channelLink = feedChannelLink();
+  const entries = scenes
+    .map(
+      (scene) => `  <entry>
+    <title>${escapeHtml(scene.title)}</title>
+    <id>urn:littechnia:scene:${escapeHtml(project.id)}:${escapeHtml(scene.id)}</id>
+    <updated>${generatedAt}</updated>
+    <content type="text">${escapeHtml(scene.content.trim() || "(not written yet)")}</content>
+  </entry>`,
+    )
+    .join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>${escapeHtml(project.title)}</title>
+  <id>urn:littechnia:project:${escapeHtml(project.id)}</id>
+  <updated>${generatedAt}</updated>
+  <link href="${escapeHtml(channelLink)}" />
+  <generator>LitTechnia</generator>
+${entries || '  <!-- No scenes are marked "Ready to read" yet, so this feed has no entries. -->'}
+</feed>
+`;
+}
+
 /** One book's records, with JSON list fields decoded. */
 function projectPayload(snapshot: ProjectSnapshot) {
   return {
@@ -241,6 +326,20 @@ export const exportSpecs: Record<
     extension: "json",
     mime: "application/json",
     build: buildJson,
+  },
+  rss: {
+    label: "RSS 2.0 feed",
+    description: "Scenes marked \"Ready to read\" only. No account, generated in your browser.",
+    extension: "xml",
+    mime: "application/rss+xml",
+    build: buildRss,
+  },
+  atom: {
+    label: "Atom 1.0 feed",
+    description: "Scenes marked \"Ready to read\" only. No account, generated in your browser.",
+    extension: "xml",
+    mime: "application/atom+xml",
+    build: buildAtom,
   },
 };
 
