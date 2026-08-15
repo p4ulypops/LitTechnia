@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Field, ListSkeleton, Panel, StatusPill } from "@/components/fields";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CraftLens, RestoreLensesButton, lenses } from "@/components/craft-lens";
 import { useAuth } from "@/lib/auth";
 import {
@@ -309,15 +310,26 @@ export default function HomePage() {
                         {item.label}
                       </span>
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => actions.remove("checklist", item.id)}
-                      aria-label={`Delete checklist item ${item.label}`}
-                      data-testid={`button-delete-checklist-${item.id}`}
-                      className="rounded-sm p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <ConfirmDialog
+                      testId={`checklist-${item.id}`}
+                      title={`Delete "${item.label}"?`}
+                      description="This removes the checklist item permanently. This cannot be undone."
+                      confirmLabel="Delete item"
+                      pendingLabel="Deleting…"
+                      onConfirm={async () => {
+                        await actions.remove("checklist", item.id);
+                      }}
+                      trigger={
+                        <button
+                          type="button"
+                          aria-label={`Delete checklist item ${item.label}`}
+                          data-testid={`button-delete-checklist-${item.id}`}
+                          className="rounded-sm p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      }
+                    />
                   </li>
                 ))}
             </ul>

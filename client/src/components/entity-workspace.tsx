@@ -1,10 +1,11 @@
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, ListSkeleton, Panel } from "@/components/fields";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { LinkPanel } from "@/components/links";
 import { AttachmentArea } from "@/components/attachments";
 import { CraftLens, RestoreLensesButton, type Lens } from "@/components/craft-lens";
-import { useSelection, useSnapshot, useStoryActions } from "@/lib/workspace";
+import { kindLabels, useSelection, useSnapshot, useStoryActions } from "@/lib/workspace";
 import type { CollectionName, EntityKind } from "@shared/schema";
 
 type Row = { id: string };
@@ -136,19 +137,28 @@ export function EntityWorkspace<T extends Row>({
               title={label(selected)}
               testId={`panel-detail-${kind}`}
               actions={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  aria-label={`Delete ${label(selected)}`}
-                  data-testid={`button-delete-${kind}`}
-                  onClick={async () => {
+                <ConfirmDialog
+                  testId={`delete-${kind}`}
+                  title={`Delete "${label(selected)}"?`}
+                  description={`This removes this ${kindLabels[kind].toLowerCase()} permanently, including its links to scenes and other records. This cannot be undone.`}
+                  confirmLabel={`Delete ${kindLabels[kind].toLowerCase()}`}
+                  pendingLabel="Deleting…"
+                  onConfirm={async () => {
                     await actions.remove(collection, selected.id);
                     setSelected(null);
                   }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      aria-label={`Delete ${label(selected)}`}
+                      data-testid={`button-delete-${kind}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  }
+                />
               }
             >
               <div className="space-y-4">{detail(selected)}</div>
