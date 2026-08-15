@@ -1,0 +1,42 @@
+name: CI
+
+# Validates every pull request against main, and every push to the UX
+# workshop branch, before anything is allowed near a merge. Deployment is a
+# separate workflow (deploy-vps.yml) and stays gated on main only.
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - ux/award-ready-workshop
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Check, build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run check
+
+      - name: Build production artefact
+        run: npm run build
+
+      - name: Run automated tests
+        run: npm test
