@@ -1,17 +1,19 @@
-# Wordsmithery
+# Lit Technica
 ## Product requirements document
 
-**Status:** Draft v0.1  
-**Date:** 4 August 2026  
+**Status:** Draft v0.2  
+**Date:** 9 August 2026 (supersedes v0.1, 4 August 2026)  
 **Audience:** Product, design, and engineering  
 **Product type:** Local-first, installable web application for first-time novelists  
 **Working premise:** A private author’s workshop that helps a novice organise, develop, draft, revise, and export a novel without attempting to replace the author.
 
 ## Executive summary
 
-Wordsmithery is a local-first creative-writing workspace for first-time novelists, initially especially useful for fantasy and science-fiction writers with complex worlds, timelines, characters, and plot threads. It imports existing Markdown and text notes, turns them into connected story material, supports planning and discovery writing in parallel, and exports author-owned work as an open project folder, Word document, PDF, Markdown, and HTML suitable for platforms such as Substack and WordPress.
+Lit Technica is a local-first creative-writing workspace for first-time novelists, initially especially useful for fantasy and science-fiction writers with complex worlds, timelines, characters, and plot threads. It imports existing Markdown and text notes, turns them into connected story material, supports planning and discovery writing in parallel, and exports author-owned work as an open project folder, Word document, PDF, Markdown, and HTML suitable for platforms such as Substack and WordPress.
 
-The product deliberately avoids treating a novelist as a prompt operator. Any AI capability is optional, transparent, author-controlled, and constrained to organisation: approved entity-link suggestions and navigational summaries. Wordsmithery will not generate scenes, chapters, plot decisions, or prose by default. This is both a product position and a safeguard against turning a craft workspace into a story-replacement tool.
+v0.2 adds a phased, opt-in **Import/Export & Syndication System**: a profile-level Connections page where an author can connect accounts or upload files to move manuscript content into and out of Google Docs, MS Word, Txt, PDF, Markdown, Craft Docs, Obsidian, WordPress, Medium, ElevenLabs, ePub, Substack, YouTube (Shorts), GoodReads, and RSS/XML. Every connection is optional and revocable, and the P0 no-account export contract remains unchanged. Full detail lives in the companion [Import/Export & Syndication spec v0.1](./lit-technica-import-export-syndication-spec-v0.1.md).
+
+The product deliberately avoids treating a novelist as a prompt operator. Any AI capability is optional, transparent, author-controlled, and constrained to organisation: approved entity-link suggestions and navigational summaries. Lit Technica will not generate scenes, chapters, plot decisions, or prose by default. This is both a product position and a safeguard against turning a craft workspace into a story-replacement tool.
 
 Craft guidance is presented as a library of optional lenses and contextual questions, not as a single mandatory method. This reflects direct disagreement among respected writers: Lev Grossman outlines heavily but does not believe writers should obey an outline, while Terry Pratchett did not plan books out before drafting ([Grossman interview](https://lunchticket.org/lev-grossman-author/), [Pratchett interview](https://longreads.com/2015/03/12/fantasy-author-terry-pratchett-on-working-on-draft-zero-of-a-book/)). Ursula K. Le Guin similarly warns that beginner heuristics become damaging when expanded into laws ([Le Guin, “On Rules of Writing”](https://www.ursulakleguin.com/on-rules-of-writing)).
 
@@ -25,11 +27,11 @@ This is consistent with the craft evidence. Pratchett described a private, unedi
 
 ## Product vision
 
-Wordsmithery is the author’s portable story workshop. It keeps the novel, its research, and its media in an understandable project folder owned by the author; it makes relationships across a novel visible; and it teaches useful craft without imposing one theory of storytelling.
+Lit Technica is the author’s portable story workshop. It keeps the novel, its research, and its media in an understandable project folder owned by the author; it makes relationships across a novel visible; and it teaches useful craft without imposing one theory of storytelling.
 
 ### Product principles
 
-- **Authorial ownership:** The author owns the canonical files, can read them outside Wordsmithery, and can leave without permission or data loss.
+- **Authorial ownership:** The author owns the canonical files, can read them outside Lit Technica, and can leave without permission or data loss.
 - **Private by default:** Drafts, especially early drafts, are private and never treated as social content. Pratchett’s draft-zero practice, Gaiman’s private practice work, and Moore’s warning about fear of judgement all support privacy as a craft feature, not merely a security feature ([Longreads](https://longreads.com/2015/03/12/fantasy-author-terry-pratchett-on-working-on-draft-zero-of-a-book/), [Gaiman FAQ](https://www.neilgaiman.com/FAQs/Advice_to_Authors), [BBC Maestro](https://www.youtube.com/watch?v=4Oan10yp5pQ)).
 - **Flexible method, never formula:** The user may choose a planning lens, discovery-writing path, genre-oriented exercise, or no framework at all. Every template is skippable, editable, and clearly labelled as a lens rather than a test of good writing.
 - **Planning and prose are peers:** Notes must not become a planning prison. Every planning surface links to scenes and chapters, and the writer can start drafting at any time.
@@ -77,17 +79,17 @@ Baselines will be established during beta. Targets are proposed for the first si
 - **Writing activation:** At least 50% of activated projects contain a chapter or scene with 500 or more words within seven days.
 - **Story development:** At least 35% of active projects complete a user-chosen readiness checklist or create material in three of four core workspaces: character, plot, timeline, and worldbuilding.
 - **Portability:** At least 95% of export attempts complete without an error; a round-trip test re-imports a portable project folder without loss of Markdown, metadata, links, or media references.
-- **Learning value:** At least 60% of surveyed active authors report that Wordsmithery helped them understand planning, drafting, or revision better.
+- **Learning value:** At least 60% of surveyed active authors report that Lit Technica helped them understand planning, drafting, or revision better.
 - **Publication outcome:** At least 20% of active authors export a manuscript or web-publishing package within six months.
-- **Trust:** Zero known cases in which an export omits authored text or original media because of a Wordsmithery-specific format defect.
+- **Trust:** Zero known cases in which an export omits authored text or original media because of a Lit Technica-specific format defect.
 
 ## Non-goals
 
-- **AI ghostwriting:** Wordsmithery will not be positioned as a generator of chapters, scenes, dialogue, endings, or replacement prose.
+- **AI ghostwriting:** Lit Technica will not be positioned as a generator of chapters, scenes, dialogue, endings, or replacement prose.
 - **A universal novel formula:** It will not require three-act structure, a beat sheet, a fixed ending, daily streaks, or a genre rule system.
 - **Full collaboration:** Real-time co-writing, comments, permissions, and conflict resolution between multiple authors are out of scope for the initial release. Read-only sharing is a later capability.
-- **Managed cloud storage:** Wordsmithery will not operate a proprietary canonical content store in the first release. Optional sync uses an author-selected local folder and their own storage provider.
-- **Direct publishing or audiobook generation:** The first release prepares outputs. It does not directly publish to Substack/WordPress or call ElevenLabs or other text-to-speech APIs.
+- **Managed cloud storage:** Lit Technica will not operate a proprietary canonical content store in the first release. Optional sync uses an author-selected local folder and their own storage provider.
+- **Direct publishing or audiobook generation in the first release:** The P0 release prepares outputs only; it does not require a connection to Substack, WordPress, ElevenLabs, or any other third party. Direct, opt-in publishing and narration connectors are explicitly phased in afterward under the Import/Export & Syndication System (see P1/P2 below and the [Import/Export & Syndication spec v0.1](./lit-technica-import-export-syndication-spec-v0.1.md)), gated behind encrypted credential storage and per-platform legal review — this is a sequencing decision, not a permanent exclusion.
 - **Copying proprietary teaching content:** The product will not reproduce paid-course lessons, copyrighted exercises, or branded writing frameworks without a licensing review.
 
 ## User journeys
@@ -96,14 +98,14 @@ Baselines will be established during beta. Targets are proposed for the first si
 
 1. The author creates or opens a local project folder.
 2. They import Markdown and text files.
-3. Wordsmithery presents imported items as unclassified notes without silently changing the source.
+3. Lit Technica presents imported items as unclassified notes without silently changing the source.
 4. The author can classify each item as character, world, plot, timeline event, scene, research, or “keep as note.”
 5. The author links or merges items and begins drafting or planning immediately.
 
 ### Develop a novel without choosing a rigid method
 
 1. The author chooses no lens, a planning lens, a discovery-writing lens, or a genre-oriented worldbuilding lens.
-2. Wordsmithery offers optional questions and starter structures; every prompt can be skipped or rewritten.
+2. Lit Technica offers optional questions and starter structures; every prompt can be skipped or rewritten.
 3. The author creates characters, plot/subplot threads, timeline events, world entries, and scene cards.
 4. Links surface relevant relationships, such as a character’s motivation, an object’s first appearance, or a timeline event connected to a scene.
 5. The author switches to the manuscript whenever ready.
@@ -120,7 +122,7 @@ Baselines will be established during beta. Targets are proposed for the first si
 1. The author reviews a manuscript in named passes, such as continuity, character, pacing, or copy-editing.
 2. They use version history to compare or restore earlier work.
 3. They choose a target: portable folder, Word, PDF, Markdown, or HTML.
-4. Wordsmithery previews the package, reports unresolved export problems, and writes files to an author-controlled location.
+4. Lit Technica previews the package, reports unresolved export problems, and writes files to an author-controlled location.
 5. For a web-publishing target, the author receives clean Markdown and HTML appropriate for pasting or importing into Substack or WordPress.
 
 ## Information architecture
@@ -152,18 +154,18 @@ The interface must offer three coherent representations over the same data: docu
 - Structured metadata must be stored in a documented, versioned, human-readable format such as JSON, YAML, or JSON-LD.
 - Original media must remain as original files in a predictable project subfolder. The product may create derived thumbnails but must never make a derived copy the only stored original.
 - The app must generate a `README` explaining the folder layout, format version, and recovery/import process.
-- The author must be able to open, copy, move, and back up the folder while Wordsmithery is closed.
+- The author must be able to open, copy, move, and back up the folder while Lit Technica is closed.
 
 **Acceptance criteria**
 
-- Given a new project, when the author selects a local folder, then Wordsmithery creates the documented project layout and no account is required to read the resulting files.
-- Given a project with text, linked entities, and media, when the author exports a portable project folder, then a clean Wordsmithery installation can re-import it with no loss of authored Markdown, original media, stable item IDs, or relationships.
+- Given a new project, when the author selects a local folder, then Lit Technica creates the documented project layout and no account is required to read the resulting files.
+- Given a project with text, linked entities, and media, when the author exports a portable project folder, then a clean Lit Technica installation can re-import it with no loss of authored Markdown, original media, stable item IDs, or relationships.
 - Given the app is offline, when the author opens an existing project, then they can read, create, edit, search, and export project content.
 
 #### Markdown and text import
 
 - Support single-file and folder import for Markdown and plain-text notes.
-- Preserve each original file unchanged until the author explicitly converts or edits it inside Wordsmithery.
+- Preserve each original file unchanged until the author explicitly converts or edits it inside Lit Technica.
 - Offer classification and link suggestions, but never auto-delete, merge, or rewrite imported notes.
 - Record source path and import date in project metadata.
 
@@ -172,6 +174,8 @@ The interface must offer three coherent representations over the same data: docu
 - Given a folder of Markdown and text files, when the author imports it, then every readable text file appears in an import review list with status, title, and source path.
 - Given an imported note, when the author classifies it as a character or plot item, then the original source text remains accessible from that item.
 - Given a file cannot be parsed, when import completes, then the author sees the file name and a clear non-destructive error rather than a partially created item.
+
+Later capabilities — Reminders/Calendar quick capture, Wispr Flow voice capture, a dual-form `#S:id` / `#S:slug` tagging system, and inline margin comments — are captured (not yet sequenced) in the companion [Quick Capture, Tagging & Inline Annotation sub-PRD v0.1](./lit-technica-quick-capture-tagging-annotation-prd-v0.1.md). Note: multi-author comments conflict with this PRD's no-collaboration non-goal (§90) and require an explicit decision before scheduling.
 
 #### Connected planning workspaces
 
@@ -211,21 +215,23 @@ The interface must offer three coherent representations over the same data: docu
 **Acceptance criteria**
 
 - Given an author attaches an audio file to a character, when they open that character from a linked scene, then they can play or locate the original attachment.
-- Given an attached file is moved outside Wordsmithery, when the app next opens the project, then it reports the broken reference and offers a relink action without deleting the relationship metadata.
+- Given an attached file is moved outside Lit Technica, when the app next opens the project, then it reports the broken reference and offers a relink action without deleting the relationship metadata.
+
+A later capability — AI-generated visual references, a gentle photo/video editor, and real-person-to-character reference links — is captured (not yet sequenced) in the companion [Visual Reference & Media sub-PRD v0.1](./lit-technica-visual-reference-media-prd-v0.1.md).
 
 #### Version history, backups, and bring-your-own sync
 
 - Maintain local version history for manuscripts and structured planning records.
 - Provide explicit restore and compare actions.
 - Detect concurrent or external file changes and guide the author through a non-destructive conflict-resolution flow.
-- Support projects stored in user-managed sync folders, including common providers, without requiring Wordsmithery-managed cloud storage.
+- Support projects stored in user-managed sync folders, including common providers, without requiring Lit Technica-managed cloud storage.
 - Provide backup-status visibility and a documented recovery process. Encryption-at-rest design is a blocking architecture decision before implementation.
 
 **Acceptance criteria**
 
 - Given an author changes a scene and saves it, when they open version history, then they can view a timestamped earlier version and restore it into a new version without data loss.
-- Given a sync provider creates a conflicting file version, when Wordsmithery discovers it, then it preserves both versions, identifies the conflict, and does not silently choose one.
-- Given a project is copied to a different device through the author’s storage provider, when it is opened there, then Wordsmithery validates the format and either opens it or presents a recoverable migration message.
+- Given a sync provider creates a conflicting file version, when Lit Technica discovers it, then it preserves both versions, identifies the conflict, and does not silently choose one.
+- Given a project is copied to a different device through the author’s storage provider, when it is opened there, then Lit Technica validates the format and either opens it or presents a recoverable migration message.
 
 #### Export
 
@@ -239,7 +245,7 @@ The interface must offer three coherent representations over the same data: docu
 
 - Given a manuscript with chapters, italic text, links, and images, when the author exports Word, PDF, Markdown, and HTML, then each package contains the ordered manuscript and preserves supported formatting.
 - Given a web-publishing export, when the author views its preview, then it identifies unsupported or missing media rather than silently omitting it.
-- Given a narration-script export, when the author opens it outside Wordsmithery, then chapter and scene boundaries are readable and all author-entered speaker labels are preserved.
+- Given a narration-script export, when the author opens it outside Lit Technica, then chapter and scene boundaries are readable and all author-entered speaker labels are preserved.
 
 ### P1: Guidance and author-controlled assistance
 
@@ -250,6 +256,7 @@ The interface must offer three coherent representations over the same data: docu
 - Present opposing or alternative approaches where credible craft sources disagree.
 - Use original prompts and summaries rather than copying copyrighted exercise text or commercial lesson sequences.
 - Include a gentle guided-project path, contextual prompts, story-readiness indicators, word-count goals, and custom checklists.
+- Prompts and gamified mechanics are genre-agnostic by default: Lit Technica serves novelists across contemporary, historical, literary, crime, romance, and speculative fiction, so core prompt copy must never assume invented worlds, magic, or advanced technology. Genre-specific content lives in optional lenses. Full requirements for the prompt library (worldbuilding, character, escalation, random mechanics) and the gamification layer live in the companion [Craft Guidance: Prompts & Gamification sub-PRD v0.1](./lit-technica-craft-guidance-prompts-prd-v0.1.md), evidenced by the [prompt & gamification craft research](./lit-technica-worldbuilding-character-prompts-research-2026-08-09.md).
 
 Craft content should operationalise, without over-claiming ownership of, several useful principles: a draft can be private and deliberately rough ([Pratchett](https://longreads.com/2015/03/12/fantasy-author-terry-pratchett-on-working-on-draft-zero-of-a-book/)); revision benefits from distance ([Gaiman](https://www.neilgaiman.com/FAQs/Advice_to_Authors)); outlines can help a writer “face the void” without being a contract ([Grossman](https://lunchticket.org/lev-grossman-author/)); and fantasy systems gain tension from limits, weaknesses, and costs ([Sanderson](https://faq.brandonsanderson.com/knowledge-base/what-are-sandersons-laws-of-magic/)).
 
@@ -272,7 +279,7 @@ The deployment model for local versus cloud AI remains undecided. No cloud model
 
 **Acceptance criteria**
 
-- Given the author selects “suggest links” for a scene, when Wordsmithery presents a suggestion, then it identifies the matching text and the destination item, and the author can accept, reject, or ignore it.
+- Given the author selects “suggest links” for a scene, when Lit Technica presents a suggestion, then it identifies the matching text and the destination item, and the author can accept, reject, or ignore it.
 - Given an author asks for a chapter summary, when the summary is shown, then it is visually labelled as a navigational aid and includes its source scope.
 - Given an author does not invoke an AI action, when they draft or plan, then no project text is sent to an AI service.
 
@@ -282,16 +289,36 @@ The deployment model for local versus cloud AI remains undecided. No cloud model
 - Exclude Draft Zero material by default.
 - Keep full account-based collaboration, commenting, and co-author conflict management out of scope.
 
-### P2: Follow-on opportunities
+### P1/P2: Import/Export & Syndication System
 
+Full architecture, per-platform capability matrix, auth patterns, and build order are specified in the companion [Import/Export & Syndication spec v0.1](./lit-technica-import-export-syndication-spec-v0.1.md). Summary of scope for this PRD:
+
+**P1 (file-based, no third-party account required)**
+
+- A profile-level Connections page where the author can upload files for formats that have no first-party API: MS Word (.docx), Txt, PDF, Markdown, Craft Docs (Markdown/TextBundle), Obsidian (vault folder/zip), ePub, and GoodReads (CSV export upload).
+- RSS/Atom feed generation per work, unlocking Substack's own importer and podcast-style distribution with no vendor relationship.
+- Encrypted-at-rest storage design for any credential this system will hold, resolved before P2 account-based connectors ship.
+
+**P2 (account-based connectors, after encryption-at-rest and legal review)**
+
+- Google Docs import/export via OAuth2 using the non-sensitive `drive.file` scope and the Google Picker.
+- WordPress connectors (self-hosted Application Passwords, then WordPress.com OAuth2) as the first genuinely bidirectional publishing integration.
+- ElevenLabs narration-job integration, built on a provider-neutral export contract and an async job queue, with explicit in-product voice-cloning consent.
+- YouTube Shorts publishing after a video-render worker exists and a YouTube API Compliance Audit is underway.
+- Medium and Substack handoff flows: canonical-URL "Import a story" deep link for Medium, RSS-paste-into-importer instructions for Substack. Neither platform has a usable write API, so these are thin UI wrappers around already-built export/RSS capability, not full integrations.
 - Continuity review that flags possible contradictions, always with evidence and author decision-making.
 - Recall prompts that surface relevant prior appearances of characters, objects, places, and plot threads while writing.
-- Direct Substack, WordPress, and publishing-platform integrations after API and account-security review.
-- Text-to-speech provider integrations, including ElevenLabs, only after a provider-neutral export contract is stable.
-- Import of Word documents, Obsidian vaults, images, and audio as initial source material.
 - Multi-project and series-level world continuity.
 - Read-only web sharing with controlled feedback collection.
 - Advanced revision workspaces: cooling-off timers, a reader-view mode, named revision ledgers, and beta-reader feedback triage.
+- Deferred to a later phase: Instagram Reels and TikTok syndication, pending public media hosting and each platform's own review/audit process.
+
+**Acceptance criteria**
+
+- Given an author has connected no platform, when they export a manuscript, then portable folder, `.docx`, PDF, Markdown, HTML, and narration-script exports all still work, per the P0 export contract.
+- Given an author connects a WordPress account, when they export a chapter to it, then the resulting post is created as a draft by default, with publish/schedule as separate explicit choices.
+- Given an author disconnects a platform from the Connections page, then its stored credential is deleted, not merely hidden, and reconnecting requires fresh authorization.
+- Given a platform has no supported export path (Medium, Substack, GoodReads), when the author views its Connections card, then the UI states this explicitly instead of presenting a non-functional publish action.
 
 ## Technical and data requirements
 
@@ -302,7 +329,7 @@ The project format is a product contract, not an implementation detail.
 ```text
 My Novel/
   README.md
-  wordsmithery-project.json
+  lit-technica-project.json
   manuscript/
     001-chapter-one.md
     002-chapter-two.md
@@ -321,7 +348,7 @@ My Novel/
 
 - Markdown contains author prose and long-form notes.
 - Metadata references content by stable UUID, never by mutable filename alone.
-- Links must degrade gracefully: a Markdown file remains useful even if Wordsmithery is no longer installed.
+- Links must degrade gracefully: a Markdown file remains useful even if Lit Technica is no longer installed.
 - The format specification, version migrations, and sample project must be published before beta.
 
 ### Offline and installable web app
@@ -390,10 +417,13 @@ My Novel/
 | What exact Markdown dialect and metadata schema are documented as the stable project format? | Product / engineering | **Blocking for portability contract** |
 | What fidelity standard is required for Word and PDF output, including comments, footnotes, front matter, and images? | Product / design | **Blocking for export acceptance tests** |
 | Is AI executed locally, through an opt-in cloud provider, or with a per-request choice? | Product / privacy / engineering | **Blocking before AI ships** |
-| What sharing mechanism offers read-only access without making Wordsmithery a managed canonical cloud store? | Product / engineering | Non-blocking for P0; blocking for P1 sharing |
+| What sharing mechanism offers read-only access without making Lit Technica a managed canonical cloud store? | Product / engineering | Non-blocking for P0; blocking for P1 sharing |
 | What user research validates the first-session import and classification flow with genuine novice writers? | Product / research | **Blocking before public beta** |
 | Which craft sources are licensed, paraphrased, or merely linked in the in-product library? | Product / legal | **Blocking before reproducing third-party content** |
 | What business model sustains development without converting author files into a lock-in mechanism? | Product | Non-blocking for product prototype; needed before commercial launch |
+| What encryption-at-rest design protects Import/Export & Syndication connector credentials (OAuth tokens, Application Passwords, API keys), and does it share the same design as the local-folder encryption question above? | Engineering / security | **Blocking before any non-file-based connector ships** |
+| Who owns per-platform ToS/legal review sign-off for the Import/Export & Syndication System (Automattic non-compete clause, Substack no-resale/no-compete clause, TikTok branding-overlay rules, GoodReads robots.txt disallow)? | Product / legal | **Blocking before each affected connector ships** |
+| Who owns the YouTube API Compliance Audit application and its timeline, given unaudited projects force uploads to private? | Product / legal | **Blocking before public-by-default YouTube Shorts publishing** |
 
 ## Research basis
 
@@ -412,7 +442,7 @@ The craft research behind this PRD prioritised primary author sources and distin
 
 | Decision | Status |
 |---|---|
-| Product name: **Wordsmithery** | Decided |
+| Product name: **Lit Technica** (renamed from Wordsmithery, 15 August 2026) | Decided |
 | Primary audience: first-time novelists | Decided |
 | Primary genre orientation: fantasy/science fiction, without excluding other fiction | Decided |
 | Workflow: hybrid planning and discovery writing | Decided |
@@ -428,5 +458,9 @@ The craft research behind this PRD prioritised primary author sources and distin
 | AI: optional, author-controlled, summaries and link suggestions only; discourage story generation | Decided |
 | AI execution location | Open |
 | Craft guidance: all approaches available, user choice; no formula enforcement | Decided |
+| Import/Export & Syndication System: phased, opt-in Connections page covering Google Docs, MS Word, Txt, PDF, Markdown, Craft Docs, Obsidian, WordPress, Medium, ElevenLabs, ePub, Substack, YouTube Shorts, GoodReads, RSS/XML | Decided, spec v0.1 published |
+| Canonical interchange format for the syndication system: Markdown with a single leading YAML front-matter block | Decided |
+| Connector auth patterns: OAuth2 (Google, WordPress.com, YouTube), delegated Application Password (self-hosted WordPress), server-held API key (ElevenLabs), file upload (Word, Txt, PDF, Markdown, Craft, Obsidian, ePub, GoodReads), RSS/no-auth (Medium import, Substack handoff) | Decided |
+| Encryption-at-rest for connector credentials: required before any non-file-based connector ships | Decided, technical design pending |
 | Six-month outcomes: stay organised, learn craft, publish work | Decided |
 

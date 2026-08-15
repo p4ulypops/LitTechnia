@@ -1,12 +1,12 @@
-# Wordsmithery implementation plan v0.3 — passwordless accounts and per-author isolation
+# Lit Technica implementation plan v0.3 — passwordless accounts and per-author isolation
 
 Status: implemented and locally validated on 8 August 2026. Not pushed; awaiting
 independent review.
 
-Predecessors: [`wordsmithery-prd-v0.1.md`](wordsmithery-prd-v0.1.md),
-[`wordsmithery-implementation-plan-v0.2.md`](wordsmithery-implementation-plan-v0.2.md).
-Companion documents: [`wordsmithery-security-notes.md`](wordsmithery-security-notes.md)
-(threat model and runbook) and [`wordsmithery-vps-deployment.md`](wordsmithery-vps-deployment.md)
+Predecessors: [`lit-technica-prd-v0.1.md`](lit-technica-prd-v0.1.md),
+[`lit-technica-implementation-plan-v0.2.md`](lit-technica-implementation-plan-v0.2.md).
+Companion documents: [`lit-technica-security-notes.md`](lit-technica-security-notes.md)
+(threat model and runbook) and [`lit-technica-vps-deployment.md`](lit-technica-vps-deployment.md)
 (required server values).
 
 ---
@@ -24,7 +24,7 @@ v0.3 turns the prototype into something that can be exposed publicly:
 2. real persistence, so an account's books survive a restart;
 3. authorisation on every data path, so one account can never see another's work.
 
-Constraints kept from v0.1/v0.2, unchanged: **Wordsmithery never generates
+Constraints kept from v0.1/v0.2, unchanged: **Lit Technica never generates
 prose, scenes, dialogue or endings.** No AI surfaces. Calm, literary, precise.
 Planners and discovery writers treated as equals. Hash routing. TanStack Query
 with `apiRequest`. No generated imagery. No localStorage, sessionStorage or
@@ -69,7 +69,7 @@ method.
 ### 2.4 Demo content moved behind a development switch
 
 The three sample books were the v0.2 "the app is never empty" answer. They are
-now owned by a demo account that exists only when `WORDSMITHERY_DEMO_SEED=true`,
+now owned by a demo account that exists only when `LIT_TECHNICA_DEMO_SEED=true`,
 which the server refuses to accept in production. A real new account starts empty
 and is met with a create-or-import welcome screen instead of somebody else's
 manuscript.
@@ -89,7 +89,7 @@ manuscript.
 
 Also added: `PublicUser`, `SessionResponse`, `emailRequestSchema`,
 `passkeyLabelSchema`, `challengeIdSchema`. The export envelope versions stay
-`wordsmithery-project/0.2` and `wordsmithery-library/0.2` — the file format did
+`lit-technica-project/0.2` and `lit-technica-library/0.2` — the file format did
 not change, so the version must not either.
 
 ---
@@ -166,16 +166,16 @@ Behavioural details that matter:
 Environment: local sandbox. `npm run check` clean, `npm run build` clean
 (measured this run: JS 778,916 B raw / 219,564 B gzip; CSS 89,296 B raw /
 14,244 B gzip; server bundle 1,281,498 B). Development server run with
-`WORDSMITHERY_DEMO_SEED=true DEV_ECHO_MAGIC_LINK=true`; production server run
+`LIT_TECHNICA_DEMO_SEED=true DEV_ECHO_MAGIC_LINK=true`; production server run
 from `dist/index.cjs` with placeholder configuration on port 5051.
 
 | # | Case | Method | Result |
 | --- | --- | --- | --- |
 | 1 | Production refuses to start without required values | `NODE_ENV=production node dist/index.cjs` | pass — names `APP_URL`, `PASSKEY_RP_ID`, `RESEND_API_KEY`, `EMAIL_FROM`, the https rule, exit 1 |
-| 2 | Production refuses development switches | same, with `WORDSMITHERY_DEMO_SEED=true` | pass — "must not be set in production", exit 1 |
+| 2 | Production refuses development switches | same, with `LIT_TECHNICA_DEMO_SEED=true` | pass — "must not be set in production", exit 1 |
 | 3 | Unauthenticated data call | `GET /api/projects` | pass — `401` with `signIn` hint |
 | 4 | Health endpoint stays open | `GET /api/health` | pass — `200`, reports `demoEnabled` |
-| 5 | Sign-in page renders with no shell | desktop 1440×900 | pass — screenshot `wordsmithery-qa-v03-signin-desktop.jpg` |
+| 5 | Sign-in page renders with no shell | desktop 1440×900 | pass — screenshot `lit-technica-qa-v03-signin-desktop.jpg` |
 | 6 | Sign-in page on mobile | 390×844, light and dark | pass — `…-signin-mobile.jpg`, `…-signin-mobile-dark.jpg` |
 | 7 | Magic link request is neutral | UI + API | pass — `202`, same wording, no enumeration |
 | 8 | Magic link signs in and lands on passkey naming | click dev link | pass — redirect to `/#/passkey-setup`, header shows the address |
@@ -195,7 +195,7 @@ from `dist/index.cjs` with placeholder configuration on port 5051.
 | 22 | Foreign origin on a mutation | `Origin: https://evil.test` | pass — `403` |
 | 23 | Session cookie flags | response header | pass locally — `HttpOnly; SameSite=Lax; Path=/; Expires=+30d`. `Secure` is set from `NODE_ENV=production` in code and must be confirmed on the live https host |
 | 24 | Production build hides the demo path | prod server, browser + curl | pass — no demo panel; `dev/demo-sign-in` and `dev/config` → `404 {"error":"Unknown endpoint"}` |
-| 25 | Passkey on a wrong host fails kindly | dev on `127.0.0.1:5000` with RP `localhost`, and prod build on `localhost:5051` with RP `littechnia.com`, desktop and mobile | pass — session reports `passkeyAvailableHere:false`, the page leads with the email link, the options endpoint returns `400`, and the alert reads "Passkeys are not available on this address. Use the email link, or open Wordsmithery on its proper https:// address." No browser text reaches the UI |
+| 25 | Passkey on a wrong host fails kindly | dev on `127.0.0.1:5000` with RP `localhost`, and prod build on `localhost:5051` with RP `littechnia.com`, desktop and mobile | pass — session reports `passkeyAvailableHere:false`, the page leads with the email link, the options endpoint returns `400`, and the alert reads "Passkeys are not available on this address. Use the email link, or open Lit Technica on its proper https:// address." No browser text reaches the UI |
 | 25a | Host matching is not a substring test | `Origin: https://www.littechnia.com` vs `https://notlittechnia.com` | pass — `true` and `false` respectively |
 | 25b | Unknown ceremony failure falls back calmly | no authenticator present on a valid host | pass — "Passkeys did not work in this browser. Use the email link instead." |
 | 25c | Technical detail is logged server-side only | server log after a refused ceremony | pass — one `[auth] passkey ceremony refused: host "127.0.0.1" … PASSKEY_RP_ID "localhost"` line per host, nothing equivalent on screen |
@@ -238,10 +238,17 @@ proxy-level rate limiting.
 ## 8. What v0.4 should take next
 
 1. Portable local-first storage: one folder per book on the author's own disk,
-   plus import of Wordsmithery's own JSON snapshots (already exported, not yet
+   plus import of Lit Technica's own JSON snapshots (already exported, not yet
    readable back).
 2. Session management UI: list and revoke active sessions per device.
 3. Durable rate limiting and structured auth logging.
 4. Encryption at rest, or an explicit statement in-product that it is absent.
 5. Code-splitting the client bundle.
 6. `.docx` import, and DOCX/EPUB export.
+7. Import/Export & Syndication System, phase 1: a Connections page plus file-based
+   connectors (Word, Txt, PDF, Markdown, Craft, Obsidian, ePub, GoodReads CSV) and
+   RSS/Atom feed generation, gated behind the encryption-at-rest work in item 4.
+   See [`lit-technica-import-export-syndication-spec-v0.1.md`](./lit-technica-import-export-syndication-spec-v0.1.md)
+   for the full architecture, per-platform capability matrix, and build order
+   covering Google Docs, WordPress, Medium, ElevenLabs, Substack, YouTube
+   Shorts, and the remaining platforms.

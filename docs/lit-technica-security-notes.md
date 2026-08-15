@@ -1,4 +1,4 @@
-# Wordsmithery security notes and runbook (v0.3)
+# Lit Technica security notes and runbook (v0.3)
 
 Scope: the passwordless authentication foundation added in v0.3. Written for the
 person who operates the VPS. It states what the code actually does, what is
@@ -85,29 +85,29 @@ these is missing under `NODE_ENV=production`:
 - `RESEND_API_KEY`
 - `EMAIL_FROM`
 
-It also exits if `DEV_ECHO_MAGIC_LINK` or `WORDSMITHERY_DEMO_SEED` is set in
+It also exits if `DEV_ECHO_MAGIC_LINK` or `LIT_TECHNICA_DEMO_SEED` is set in
 production, so the development conveniences cannot be switched on by accident.
 
 Verified locally:
 
 ```
 $ NODE_ENV=production node dist/index.cjs
-Wordsmithery cannot start: invalid configuration.
+Lit Technica cannot start: invalid configuration.
   - APP_URL
   - PASSKEY_RP_ID
   - RESEND_API_KEY
   - EMAIL_FROM
   - APP_URL must be an https:// URL in production
-See .env.example and docs/wordsmithery-vps-deployment.md.
+See .env.example and docs/lit-technica-vps-deployment.md.
 (exit 1)
 
-$ NODE_ENV=production WORDSMITHERY_DEMO_SEED=true ... node dist/index.cjs
-Wordsmithery cannot start: invalid configuration.
-  - WORDSMITHERY_DEMO_SEED must not be set in production
+$ NODE_ENV=production LIT_TECHNICA_DEMO_SEED=true ... node dist/index.cjs
+Lit Technica cannot start: invalid configuration.
+  - LIT_TECHNICA_DEMO_SEED must not be set in production
 (exit 1)
 ```
 
-See `wordsmithery-app/.env.example` for every value with commentary.
+See `lit-technica-app/.env.example` for every value with commentary.
 
 ---
 
@@ -153,14 +153,14 @@ and that `PASSKEY_RP_ID` matches the domain they actually use.
 
 1. Create the database directory and lock it down:
    ```bash
-   sudo -u wordsmithery mkdir -p /opt/wordsmithery/data
-   sudo chmod 700 /opt/wordsmithery/data
+   sudo -u lit-technica mkdir -p /opt/lit-technica/data
+   sudo chmod 700 /opt/lit-technica/data
    ```
-2. Write `/opt/wordsmithery/.env` from `.env.example`, `chmod 600` it, owned by
-   the service user. Set `DATABASE_PATH=/opt/wordsmithery/data/wordsmithery.db`.
+2. Write `/opt/lit-technica/.env` from `.env.example`, `chmod 600` it, owned by
+   the service user. Set `DATABASE_PATH=/opt/lit-technica/data/lit-technica.db`.
 3. Verify DNS and TLS for `littechnia.com` first. Passkeys require a real
    `https://` origin whose host matches `PASSKEY_RP_ID` exactly.
-4. Deploy, then `sudo systemctl restart wordsmithery` and confirm:
+4. Deploy, then `sudo systemctl restart lit-technica` and confirm:
    ```bash
    curl -s https://littechnia.com/api/health
    # {"status":"ok","auth":{"magicLinkEnabled":true,"passkeyEnabled":true,"demoEnabled":false}}
@@ -177,7 +177,7 @@ and that `PASSKEY_RP_ID` matches the domain they actually use.
 ### Rotating the Resend key
 
 1. Create the new key in Resend.
-2. Edit `/opt/wordsmithery/.env`, `sudo systemctl restart wordsmithery`.
+2. Edit `/opt/lit-technica/.env`, `sudo systemctl restart lit-technica`.
 3. Request a link to your own address and confirm delivery.
 4. Revoke the old key. Existing sessions are unaffected.
 
@@ -192,10 +192,10 @@ before you touch the RP ID.
 There is no admin UI. Operate on the database with the service stopped:
 
 ```bash
-sudo systemctl stop wordsmithery
-sudo -u wordsmithery sqlite3 /opt/wordsmithery/data/wordsmithery.db \
+sudo systemctl stop lit-technica
+sudo -u lit-technica sqlite3 /opt/lit-technica/data/lit-technica.db \
   "DELETE FROM sessions;"                 -- sign everyone out
-sudo systemctl start wordsmithery
+sudo systemctl start lit-technica
 ```
 
 Replace the statement with `DELETE FROM sessions WHERE user_id = '…';` for one
@@ -207,8 +207,8 @@ Back up `DATABASE_PATH` and `.env` separately from code. Use SQLite's own
 backup to avoid copying a torn file:
 
 ```bash
-sudo -u wordsmithery sqlite3 /opt/wordsmithery/data/wordsmithery.db \
-  ".backup '/opt/wordsmithery/data/backup-$(date +%F).db'"
+sudo -u lit-technica sqlite3 /opt/lit-technica/data/lit-technica.db \
+  ".backup '/opt/lit-technica/data/backup-$(date +%F).db'"
 ```
 
 Treat backups as sensitive: they contain everybody's manuscripts.
@@ -217,7 +217,7 @@ Treat backups as sensitive: they contain everybody's manuscripts.
 
 1. `DELETE FROM sessions;` as above — all cookies become useless immediately.
 2. Rotate `RESEND_API_KEY`.
-3. Read `sudo journalctl -u wordsmithery -S -24h | grep '/api/auth'`. Auth
+3. Read `sudo journalctl -u lit-technica -S -24h | grep '/api/auth'`. Auth
    request bodies are deliberately not logged, so expect paths and status codes
    only.
 
