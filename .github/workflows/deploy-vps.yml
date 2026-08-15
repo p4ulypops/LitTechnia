@@ -1,4 +1,4 @@
-name: Deploy Wordsmithery to VPS
+name: Deploy LitTechnia to VPS
 
 on:
   push:

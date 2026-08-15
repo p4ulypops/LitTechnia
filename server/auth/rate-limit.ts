@@ -1,7 +1,7 @@
 /**
  * Small fixed-window rate limiter.
  *
- * In-process and per-instance on purpose: Wordsmithery is a single-node app
+ * In-process and per-instance on purpose: LitTechnia is a single-node app
  * behind one reverse proxy, and the goal is to blunt magic-link spam and
  * credential stuffing, not to be a distributed quota service. If the app is
  * ever scaled horizontally this needs to move to shared storage — noted in

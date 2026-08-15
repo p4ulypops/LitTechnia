@@ -37,7 +37,7 @@ function FirstRun() {
         </h1>
         <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
           Nothing is here yet, and nothing is borrowed from anyone else. Start a book and
-          Wordsmithery will hold its manuscript, characters, plot threads, timeline, world notes and
+          LitTechnia will hold its manuscript, characters, plot threads, timeline, world notes and
           research in one place — without writing a word of it for you.
         </p>
       </header>
@@ -155,7 +155,7 @@ export default function HomePage() {
           <p className="font-medium">This book is empty, which is a fine place to start.</p>
           <p className="mt-1 text-muted-foreground">
             Nothing from your other books leaks in here. Write a first scene in the Manuscript, or use
-            the import wizard to bring in notes and drafts you already have. Wordsmithery will not
+            the import wizard to bring in notes and drafts you already have. LitTechnia will not
             write any of it for you.
           </p>
         </div>

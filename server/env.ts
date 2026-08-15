@@ -88,7 +88,7 @@ export function loadEnv(env: NodeJS.ProcessEnv = process.env): AppEnv {
   );
   const rpId = require("PASSKEY_RP_ID", env.PASSKEY_RP_ID) || "localhost";
   const rpName =
-    (env.PASSKEY_RP_NAME ?? "Wordsmithery").trim() || "Wordsmithery";
+    (env.PASSKEY_RP_NAME ?? "LitTechnia").trim() || "LitTechnia";
   const resendApiKey = require("RESEND_API_KEY", env.RESEND_API_KEY);
   const emailFrom = require("EMAIL_FROM", env.EMAIL_FROM);
   const devEchoMagicLink = truthy(env.DEV_ECHO_MAGIC_LINK);
@@ -105,7 +105,7 @@ export function loadEnv(env: NodeJS.ProcessEnv = process.env): AppEnv {
   }
   if (missing.length) {
     throw new ConfigError(
-      `Wordsmithery cannot start: invalid configuration.\n  - ${missing.join("\n  - ")}\n` +
+      `LitTechnia cannot start: invalid configuration.\n  - ${missing.join("\n  - ")}\n` +
         `See .env.example and docs/wordsmithery-vps-deployment.md.`,
     );
   }

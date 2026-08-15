@@ -37,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { WordsmitheryLockup } from "@/components/brand";
+import { LitTechniaLockup } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -109,9 +109,9 @@ function NavSidebar() {
   return (
     <Sidebar data-testid="nav-sidebar">
       <SidebarHeader className="px-3 py-4">
-        <WordsmitheryLockup />
+        <LitTechniaLockup />
         <p className="mt-2 pl-[2.3rem] text-xs leading-snug text-muted-foreground">
-          Your workshop. Not a ghostwriter.
+          Your wordsmith's workshop. Not a ghostwriter.
         </p>
         <div className="mt-3 rounded-sm border border-border">
           <p className="px-2 pt-1.5 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground">
@@ -161,7 +161,7 @@ function NavSidebar() {
       <SidebarFooter className="px-3 py-3 text-xs text-muted-foreground">
         <p className="flex items-start gap-2">
           <Wand2 className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-          <span>No AI writes here. Wordsmithery never generates prose for you.</span>
+          <span>No AI writes here. LitTechnia never generates prose for you.</span>
         </p>
       </SidebarFooter>
     </Sidebar>

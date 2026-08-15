@@ -183,7 +183,7 @@ export function buildJson(snapshot: ProjectSnapshot): string {
     exportedAt: new Date().toISOString(),
     documentation: {
       about:
-        "Wordsmithery portable snapshot of one book. Authored prose lives in scenes[].content as Markdown-compatible text. Relationships are explicit rows in links[] so no data is hidden in a proprietary structure.",
+        "LitTechnia portable snapshot of one book. Authored prose lives in scenes[].content as Markdown-compatible text. Relationships are explicit rows in links[] so no data is hidden in a proprietary structure.",
       scopeNote: `Contains only the project "${snapshot.project.id}". For every book at once, use the ${LIBRARY_FORMAT_VERSION} library export.`,
       ...commonDocs,
     },
@@ -200,7 +200,7 @@ export function buildLibraryJson(snapshots: ProjectSnapshot[]): string {
     exportedAt: new Date().toISOString(),
     documentation: {
       about:
-        "Wordsmithery portable library snapshot: every book in the session, archived ones included, each as its own entry in projects[].",
+        "LitTechnia portable library snapshot: every book in the session, archived ones included, each as its own entry in projects[].",
       scopeNote: `Each projects[] entry has the same shape as the ${SNAPSHOT_FORMAT_VERSION} single-book export, minus its envelope. project.archived is 1 for shelved books.`,
       ...commonDocs,
     },

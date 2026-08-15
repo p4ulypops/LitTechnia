@@ -387,7 +387,7 @@ export const collections = [
 export type CollectionName = (typeof collections)[number];
 
 /** Documented shape of the single-book JSON snapshot export. */
-export const SNAPSHOT_FORMAT_VERSION = "wordsmithery-project/0.2";
+export const SNAPSHOT_FORMAT_VERSION = "littechnia-project/0.2";
 
 /** Documented shape of the whole-library JSON snapshot export. */
-export const LIBRARY_FORMAT_VERSION = "wordsmithery-library/0.2";
+export const LIBRARY_FORMAT_VERSION = "littechnia-library/0.2";

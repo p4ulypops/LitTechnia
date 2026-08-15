@@ -130,7 +130,7 @@ export function registerAuthRoutes(app: Express) {
    * cannot act on. The technical facts are logged here, server-side only.
    */
   const PASSKEY_WRONG_ADDRESS =
-    "Passkeys are not available on this address. Use the email link, or open Wordsmithery on its proper https:// address.";
+    "Passkeys are not available on this address. Use the email link, or open LitTechnia on its proper https:// address.";
 
   const warnedHosts = new Set<string>();
 
@@ -249,7 +249,7 @@ export function registerAuthRoutes(app: Express) {
    * Local demo sign-in. Exists so the interface can be exercised without a
    * WebAuthn authenticator or a mail provider. It only ever signs in the
    * flagged demo account, and it is not registered at all in production or
-   * without WORDSMITHERY_DEMO_SEED=true.
+   * without WORDSMITHERY_DEMO_SEED=true (env var name kept for deployment continuity).
    */
   if (demoEnabled()) {
     app.post(

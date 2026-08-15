@@ -168,7 +168,7 @@ export function useAuth() {
  * domain or an exception class.
  */
 export const PASSKEY_WRONG_ADDRESS_MESSAGE =
-  "Passkeys are not available on this address. Use the email link, or open Wordsmithery on its proper https:// address.";
+  "Passkeys are not available on this address. Use the email link, or open LitTechnia on its proper https:// address.";
 
 const PASSKEY_GENERIC_MESSAGE =
   "Passkeys did not work in this browser. Use the email link instead.";
@@ -228,7 +228,7 @@ export function passkeyErrorMessage(error: unknown) {
   }
   // A passkey for this account already exists on this device.
   if (/InvalidStateError/i.test(text)) {
-    return "This device already has a passkey for Wordsmithery. Try signing in with it instead.";
+    return "This device already has a passkey for LitTechnia. Try signing in with it instead.";
   }
   // Wrong hostname for the configured RP ID, an IP address, a plain-http or
   // otherwise insecure context: an operator problem, not the author's.

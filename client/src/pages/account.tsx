@@ -97,8 +97,8 @@ export default function AccountPage({ prompt = false }: { prompt?: boolean }) {
         </h1>
         <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted-foreground">
           {prompt
-            ? "You are signed in. Naming a passkey now means next time you can open Wordsmithery with your fingerprint, face or device PIN instead of waiting for an email."
-            : "Wordsmithery has no password to change. Sign-in is a passkey on a device you trust, with an emailed single-use link as a fallback."}
+            ? "You are signed in. Naming a passkey now means next time you can open LitTechnia with your fingerprint, face or device PIN instead of waiting for an email."
+            : "LitTechnia has no password to change. Sign-in is a passkey on a device you trust, with an emailed single-use link as a fallback."}
         </p>
       </header>
 
@@ -209,7 +209,7 @@ export default function AccountPage({ prompt = false }: { prompt?: boolean }) {
                 className="text-xs text-muted-foreground"
                 data-testid="text-passkey-unavailable-here"
               >
-                Passkeys need Wordsmithery&rsquo;s proper https:// address. Open
+                Passkeys need LitTechnia&rsquo;s proper https:// address. Open
                 it there to add one.
               </p>
             )}

@@ -4,7 +4,7 @@
  * Passkey first, because it is the calmest and safest path: one prompt, no
  * typing, nothing to forget. An email link is offered underneath for a new
  * device or a browser without an authenticator. There is no password field
- * anywhere in Wordsmithery, and this page never claims to know whether an
+ * anywhere in LitTechnia, and this page never claims to know whether an
  * address has an account.
  */
 import { useEffect, useState } from "react";
@@ -12,7 +12,7 @@ import { AlertCircle, Fingerprint, Mail, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { WordsmitheryLockup } from "@/components/brand";
+import { LitTechniaLockup } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme";
 import {
   PASSKEY_WRONG_ADDRESS_MESSAGE,
@@ -111,7 +111,7 @@ export default function SignInPage() {
       data-testid="page-sign-in"
     >
       <div className="mx-auto flex max-w-5xl items-center justify-between">
-        <WordsmitheryLockup />
+        <LitTechniaLockup />
         <ThemeToggle />
       </div>
 
@@ -125,7 +125,7 @@ export default function SignInPage() {
             Sign in to your writing rooms
           </h1>
           <p className="mt-4 text-[0.975rem] leading-relaxed text-muted-foreground">
-            Wordsmithery keeps your manuscript, characters, plots, timeline and
+            LitTechnia keeps your manuscript, characters, plots, timeline and
             notes in one place — and never writes a word of them for you. Your
             books are yours; you can export the whole library as Markdown or
             JSON at any time.
@@ -189,7 +189,7 @@ export default function SignInPage() {
               </>
             ) : (
               <span data-testid="text-passkey-unavailable-here">
-                Passkeys need Wordsmithery&rsquo;s proper https:// address. On
+                Passkeys need LitTechnia&rsquo;s proper https:// address. On
                 this one, use the email link below.
               </span>
             )}
@@ -300,7 +300,7 @@ export default function SignInPage() {
       </main>
 
       <footer className="mx-auto mt-14 max-w-5xl border-t border-border pt-4 text-xs text-muted-foreground">
-        Wordsmithery never generates prose, scenes or endings. The writing is
+        LitTechnia never generates prose, scenes or endings. The writing is
         yours.
       </footer>
     </div>

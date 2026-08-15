@@ -69,7 +69,7 @@ async function getResend() {
 
 const plainBody = (url: string, minutes: number) =>
   [
-    "Your Wordsmithery sign-in link",
+    "Your LitTechnia sign-in link",
     "",
     url,
     "",
@@ -81,10 +81,10 @@ const htmlBody = (url: string, minutes: number) => `<!doctype html>
 <html><body style="margin:0;background:#f7f5f1;padding:32px;font-family:Georgia,'Iowan Old Style',serif;color:#231f1c">
   <table role="presentation" style="max-width:520px;margin:0 auto;background:#fffdf9;border:1px solid #e3ddd3;border-radius:6px">
     <tr><td style="padding:32px">
-      <p style="margin:0 0 4px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#7a6f63">Wordsmithery</p>
+      <p style="margin:0 0 4px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#7a6f63">LitTechnia</p>
       <h1 style="margin:0 0 16px;font-size:22px;font-weight:600">Your sign-in link</h1>
       <p style="margin:0 0 24px;font-size:15px;line-height:1.6">Open the link below to sign in and carry on writing.</p>
-      <p style="margin:0 0 24px"><a href="${url}" style="display:inline-block;padding:12px 20px;background:#231f1c;color:#fffdf9;text-decoration:none;border-radius:4px;font-size:15px">Sign in to Wordsmithery</a></p>
+      <p style="margin:0 0 24px"><a href="${url}" style="display:inline-block;padding:12px 20px;background:#231f1c;color:#fffdf9;text-decoration:none;border-radius:4px;font-size:15px">Sign in to LitTechnia</a></p>
       <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#5c534a">This link works once and expires in about ${minutes} minutes.</p>
       <p style="margin:0;font-size:13px;line-height:1.6;color:#5c534a">If you did not ask to sign in, ignore this email — nothing has changed.</p>
     </td></tr>
@@ -107,7 +107,7 @@ export async function deliverMagicLink(email: string, url: string): Promise<Issu
     await resend.emails.send({
       from: env.emailFrom,
       to: email,
-      subject: "Your Wordsmithery sign-in link",
+      subject: "Your LitTechnia sign-in link",
       text: plainBody(url, minutes),
       html: htmlBody(url, minutes),
     });
