@@ -17,10 +17,16 @@
  * accurate account of *why* it still won't work, rather than a static wall of
  * text that never changes.
  */
-import { env } from "./env";
+import { env as realEnv, type AppEnv } from "./env";
 import type { ConnectorAvailability } from "@shared/schema";
 
-export function resolveConnectors(): ConnectorAvailability[] {
+/**
+ * Accepts an env override so availability rules can be unit-tested against
+ * every configuration combination without touching real process.env or
+ * relying on module-mock plumbing. Production call sites never pass a
+ * second argument, so they always get the real singleton.
+ */
+export function resolveConnectors(env: AppEnv = realEnv): ConnectorAvailability[] {
   const oauthReason = (label: string, configured: boolean) =>
     !env.credentialEncryptionConfigured
       ? "Needs CREDENTIAL_ENCRYPTION_KEY configured on the server before any OAuth token can be stored -- not set here."
