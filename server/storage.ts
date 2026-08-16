@@ -350,7 +350,11 @@ export class SqliteStorage implements IStorage {
     };
     const row: Record<string, unknown> = {
       ...data,
-      id: this.nextId(prefixes[collection]),
+      // A dedicated route (media upload) may mint the id itself when the id
+      // must exist before the row does -- e.g. to embed it in a storage key.
+      // The generic collection routes never send one: their insert schemas
+      // omit `id`, so a client still cannot choose its own ids.
+      id: typeof data.id === "string" && data.id ? data.id : this.nextId(prefixes[collection]),
       projectId,
     };
     if (collection === "scenes" || (collection === "events" && row.orderIndex === undefined)) {

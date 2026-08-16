@@ -17,3 +17,6 @@ dist/
 
 *.log
 .DS_Store
+
+# Uploaded media files (originals + thumbnails) — user content, never commit.
+media/
