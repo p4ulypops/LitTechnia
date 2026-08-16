@@ -15,6 +15,12 @@ import {
   SNAPSHOT_FORMAT_VERSION,
   type ProjectSnapshot,
 } from "@shared/schema";
+import {
+  buildAtom as buildAtomFeed,
+  buildRss as buildRssFeed,
+  escapeXml,
+  manuscriptFeedSource,
+} from "@shared/feeds";
 
 export type ExportKind = "markdown" | "html" | "narration" | "json" | "rss" | "atom";
 
@@ -41,12 +47,9 @@ function groupByChapter(snapshot: ProjectSnapshot) {
   return chapters;
 }
 
-const escapeHtml = (text: string) =>
-  text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+// The HTML exporter and the feed builders escape identically; the canonical
+// implementation lives in shared/feeds.ts next to the feed builders.
+const escapeHtml = escapeXml;
 
 export function buildMarkdown(snapshot: ProjectSnapshot): string {
   const { project } = snapshot;
@@ -140,16 +143,6 @@ export function buildNarration(snapshot: ProjectSnapshot): string {
   return out.join("\n");
 }
 
-/**
- * Scenes eligible for the RSS/Atom feed: marked "Ready to read" and not
- * draft-zero material, which is private by default and never syndicated.
- */
-function feedScenes(snapshot: ProjectSnapshot) {
-  return orderedScenes(snapshot).filter(
-    (scene) => scene.status === "ready" && scene.draftZero !== 1,
-  );
-}
-
 function feedChannelLink(): string {
   return typeof window !== "undefined" && window.location?.origin
     ? window.location.origin
@@ -158,40 +151,28 @@ function feedChannelLink(): string {
 
 /**
  * RSS 2.0 feed, built entirely in the browser from the live snapshot -- no
- * account, no server round trip. There is no per-scene timestamp in this
- * prototype's schema, so every item shares one "generated at" pubDate rather
- * than a fabricated distinct one; the Connections page says so explicitly.
- * Item guids are non-permalink (isPermaLink="false") because this feed is
- * not hosted at a stable public URL by LitTechnia itself -- the author hosts
- * or hands off the generated file.
+ * account, no server round trip. The actual builder is shared with the server
+ * (@shared/feeds) so the hosted feed route renders the same XML, including
+ * the urn:littechnia:scene:<projectId>:<sceneId> GUIDs, byte-for-byte.
+ *
+ * The browser download always carries the full scene text: the file is the
+ * author's own, generated locally, and this behaviour is unchanged since the
+ * feeds first shipped. (Hosted feeds default to the least-revealing detail
+ * level instead, because their URLs are effectively public once shared.)
+ *
+ * There is no per-scene timestamp in this prototype's schema, so every item
+ * shares one "generated at" pubDate rather than a fabricated distinct one;
+ * the Connections page says so explicitly. Item guids are non-permalink
+ * (isPermaLink="false") because this file is not hosted at a stable public
+ * URL by LitTechnia itself -- the author hosts or hands off the file.
  */
 export function buildRss(snapshot: ProjectSnapshot): string {
-  const { project } = snapshot;
-  const scenes = feedScenes(snapshot);
-  const generatedAt = new Date().toUTCString();
-  const channelLink = feedChannelLink();
-  const items = scenes
-    .map(
-      (scene) => `    <item>
-      <title>${escapeHtml(scene.title)}</title>
-      <guid isPermaLink="false">urn:littechnia:scene:${escapeHtml(project.id)}:${escapeHtml(scene.id)}</guid>
-      <pubDate>${generatedAt}</pubDate>
-      <description>${escapeHtml(scene.content.trim() || "(not written yet)")}</description>
-    </item>`,
-    )
-    .join("\n");
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
-  <channel>
-    <title>${escapeHtml(project.title)}</title>
-    <link>${escapeHtml(channelLink)}</link>
-    <description>${escapeHtml(project.subtitle || `${project.title} — a book in progress on LitTechnia.`)}</description>
-    <generator>LitTechnia</generator>
-    <lastBuildDate>${generatedAt}</lastBuildDate>
-${items || '    <!-- No scenes are marked "Ready to read" yet, so this feed has no items. -->'}
-  </channel>
-</rss>
-`;
+  return buildRssFeed(
+    manuscriptFeedSource(snapshot, {
+      detailLevel: "full",
+      channelLink: feedChannelLink(),
+    }),
+  );
 }
 
 /**
@@ -199,30 +180,12 @@ ${items || '    <!-- No scenes are marked "Ready to read" yet, so this feed has 
  * RSS build above.
  */
 export function buildAtom(snapshot: ProjectSnapshot): string {
-  const { project } = snapshot;
-  const scenes = feedScenes(snapshot);
-  const generatedAt = new Date().toISOString();
-  const channelLink = feedChannelLink();
-  const entries = scenes
-    .map(
-      (scene) => `  <entry>
-    <title>${escapeHtml(scene.title)}</title>
-    <id>urn:littechnia:scene:${escapeHtml(project.id)}:${escapeHtml(scene.id)}</id>
-    <updated>${generatedAt}</updated>
-    <content type="text">${escapeHtml(scene.content.trim() || "(not written yet)")}</content>
-  </entry>`,
-    )
-    .join("\n");
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
-  <title>${escapeHtml(project.title)}</title>
-  <id>urn:littechnia:project:${escapeHtml(project.id)}</id>
-  <updated>${generatedAt}</updated>
-  <link href="${escapeHtml(channelLink)}" />
-  <generator>LitTechnia</generator>
-${entries || '  <!-- No scenes are marked "Ready to read" yet, so this feed has no entries. -->'}
-</feed>
-`;
+  return buildAtomFeed(
+    manuscriptFeedSource(snapshot, {
+      detailLevel: "full",
+      channelLink: feedChannelLink(),
+    }),
+  );
 }
 
 /** One book's records, with JSON list fields decoded. */

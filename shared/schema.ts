@@ -519,6 +519,53 @@ export const insertFeedDefinitionSchema = createInsertSchema(feedDefinitions).om
 });
 /* `activityEvents` has no insert schema on purpose: it is server-written only. */
 
+/* ------------------------------------------- feed management API contract */
+
+/**
+ * How much prose a hosted feed may carry. The default is the least-revealing
+ * value, matching the feedDefinitions column default; an author opts a feed
+ * UP to more detail, never down.
+ */
+export const feedDetailLevels = ["metadata_only", "summary", "full"] as const;
+export type FeedDetailLevel = (typeof feedDetailLevels)[number];
+
+/**
+ * What the Connections page may send to create a hosted feed. Only the
+ * manuscript feed exists in this release — the other feed types from Sub-PRD
+ * C depend on infrastructure that is not built yet, so they are rejected here
+ * rather than accepted and silently mishandled. The token is minted and
+ * hashed server-side; there is deliberately no client-writable token field.
+ */
+export const createFeedSchema = z.object({
+  feedType: z.literal("manuscript"),
+  detailLevel: z.enum(feedDetailLevels).default("metadata_only"),
+  audienceLabel: z.string().trim().max(120).default(""),
+});
+export type CreateFeedRequest = z.infer<typeof createFeedSchema>;
+
+/**
+ * A feed definition as the management API returns it. `tokenHash` never
+ * leaves the server, and the plaintext token is never stored — so a feed's
+ * URL can only be shown once, at mint time (see CreatedFeedResponse).
+ */
+export type PublicFeedDefinition = Omit<FeedDefinition, "tokenHash">;
+
+/** GET /api/projects/:projectId/feeds */
+export type FeedListResponse = { feeds: PublicFeedDefinition[] };
+
+/**
+ * POST /api/projects/:projectId/feeds — the one and only time the plaintext
+ * token (and therefore the usable public URL) is disclosed. The UI must say
+ * so explicitly when it shows this.
+ */
+export type CreatedFeedResponse = {
+  feed: PublicFeedDefinition;
+  /** Plaintext server-minted token, ≥128-bit, shown once. Never persisted. */
+  token: string;
+  /** Absolute public URL of the feed: <appUrl>/feeds/<token>.xml */
+  url: string;
+};
+
 export type Project = typeof projects.$inferSelect;
 export type Scene = typeof scenes.$inferSelect;
 export type Character = typeof characters.$inferSelect;

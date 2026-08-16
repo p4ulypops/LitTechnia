@@ -59,9 +59,14 @@ export function resolveConnectors(env: AppEnv = realEnv): ConnectorAvailability[
       id: "rss-atom",
       name: "RSS 2.0 / Atom 1.0 feed",
       category: "feed",
-      state: "file_based",
+      // No longer purely file_based: the feed is now also server-rendered at a
+      // hosted, token-addressed URL, so the honest state is "available".
+      state: "available",
       summary: "Generate a spec-valid feed of your ready scenes for Substack, Medium, feed readers or podcast tools.",
-      reason: "Built entirely from your book, in your browser, with no account -- generate it in the Feeds section further down this page.",
+      reason:
+        "Live two ways: download the file (built entirely from your book, in your browser, no account needed) " +
+        "or mint a hosted feed URL in the Feeds section below -- server-rendered, readable by anyone who has " +
+        "the link, and revocable there with a hard 404.",
     },
     {
       id: "medium",

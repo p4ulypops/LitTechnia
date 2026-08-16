@@ -5,6 +5,7 @@ import type {
   CollectionName,
   ConnectionsResponse,
   EntityKind,
+  FeedListResponse,
   ImportItem,
   ImportResult,
   LibrarySnapshot,
@@ -39,6 +40,22 @@ export function useLibrarySnapshots() {
  */
 export function useConnections() {
   return useQuery<ConnectionsResponse>({ queryKey: ["/api/connections"] });
+}
+
+/** Query key for one book's hosted feed definitions (management API). */
+export function feedsKey(projectId: string) {
+  return ["/api/projects", projectId, "feeds"] as const;
+}
+
+/**
+ * Hosted feed definitions for one book. Never carries a token or tokenHash —
+ * a feed's usable URL is disclosed once at mint time and cannot be recovered.
+ */
+export function useProjectFeeds(projectId: string | null) {
+  return useQuery<FeedListResponse>({
+    queryKey: feedsKey(projectId ?? "none"),
+    enabled: Boolean(projectId),
+  });
 }
 
 function snapshotKey(projectId: string) {
