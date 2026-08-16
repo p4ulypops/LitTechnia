@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildAtom, buildRss, exportSpecs } from "./exporters";
+import { buildAtom, buildJson, buildLibraryJson, buildRss, exportSpecs } from "./exporters";
 import type { Project, ProjectSnapshot, Scene } from "@shared/schema";
 
 function project(overrides: Partial<Project> = {}): Project {
@@ -187,5 +187,68 @@ describe("exportSpecs feed entries", () => {
     expect(exportSpecs.rss.mime).toBe("application/rss+xml");
     expect(exportSpecs.atom.extension).toBe("xml");
     expect(exportSpecs.atom.mime).toBe("application/atom+xml");
+  });
+});
+
+/* ------------------------------------------- Sub-PRD A: attachment policy */
+
+describe("export exclusion of real-world references", () => {
+  const mediaAttachment = (overrides: Record<string, unknown> = {}) => ({
+    id: "at-1",
+    projectId: "proj-1",
+    ownerKind: "character",
+    ownerId: "ch-1",
+    fileName: "photo.png",
+    mimeType: "image/png",
+    size: 100,
+    caption: "",
+    storageKey: "proj-1/at-1/photo.png",
+    role: "reference",
+    origin: "uploaded",
+    derivedFromId: "",
+    provenance: "{}",
+    privateNote: "",
+    altText: "",
+    createdAt: "2026-08-01T10:00:00.000Z",
+    sortIndex: 1,
+    batchId: "",
+    updatedAt: "",
+    ...overrides,
+  });
+
+  it("strips real_world_ref attachments and every privateNote from the JSON snapshot", () => {
+    const snap = snapshot([scene()]);
+    snap.attachments = [
+      mediaAttachment({ id: "at-keep", role: "reference", privateNote: "" }),
+      mediaAttachment({
+        id: "at-private",
+        role: "real_world_ref",
+        privateNote: "this is actually Priya",
+        fileName: "priya.png",
+      }),
+      mediaAttachment({ id: "at-derived", role: "derived", privateNote: "leftover note" }),
+    ] as never;
+    const parsed = JSON.parse(buildJson(snap));
+    const ids = parsed.attachments.map((a: { id: string }) => a.id);
+    expect(ids).toEqual(["at-keep", "at-derived"]);
+    expect(JSON.stringify(parsed)).not.toContain("this is actually Priya");
+    expect(JSON.stringify(parsed)).not.toContain("leftover note");
+    expect(parsed.attachments.every((a: { privateNote: string }) => a.privateNote === "")).toBe(
+      true,
+    );
+  });
+
+  it("applies the same exclusion to the whole-library export", () => {
+    const snap = snapshot([scene()]);
+    snap.attachments = [
+      mediaAttachment({
+        id: "at-private",
+        role: "real_world_ref",
+        privateNote: "real person",
+      }),
+    ] as never;
+    const parsed = JSON.parse(buildLibraryJson([snap]));
+    expect(parsed.projects[0].attachments).toEqual([]);
+    expect(JSON.stringify(parsed)).not.toContain("real person");
   });
 });

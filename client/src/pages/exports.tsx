@@ -13,6 +13,8 @@ import {
   type ExportKind,
   type ExportResult,
 } from "@/lib/exporters";
+import { downloadPortableZip, portableFileAttachments } from "@/lib/portable-zip";
+
 import { LIBRARY_FORMAT_VERSION, SNAPSHOT_FORMAT_VERSION } from "@shared/schema";
 
 const order: ExportKind[] = ["markdown", "html", "narration", "json"];
@@ -23,6 +25,13 @@ export default function ExportsPage() {
   const [last, setLast] = useState<ExportResult | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [preview, setPreview] = useState<ExportKind | null>(null);
+  const [zip, setZip] = useState<{
+    fileName: string;
+    bytes: number;
+    fileCount: number;
+    downloaded: boolean;
+  } | null>(null);
+  const [zipBusy, setZipBusy] = useState(false);
 
   if (isLoading || !snapshot) {
     return (
@@ -31,6 +40,10 @@ export default function ExportsPage() {
       </div>
     );
   }
+
+  const realWorldCount =
+    snapshot.attachments.filter((a) => a.role === "real_world_ref").length;
+  const portableCount = portableFileAttachments(snapshot).length;
 
   const previewText = preview ? exportSpecs[preview].build(snapshot) : "";
 
@@ -156,6 +169,47 @@ export default function ExportsPage() {
           </p>
         </Panel>
       )}
+
+      <Panel
+        eyebrow="Portable project"
+        title="The book and its images in one .zip"
+        testId="panel-export-portable"
+      >
+        <p className="text-sm text-muted-foreground">
+          The documented JSON snapshot plus the original bytes of every exportable attachment,
+          under <code>files/</code>. Real-world-reference photos and private notes are never
+          included.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            disabled={zipBusy}
+            data-testid="button-export-portable"
+            onClick={async () => {
+              setZipBusy(true);
+              try {
+                setZip(await downloadPortableZip(snapshot));
+              } finally {
+                setZipBusy(false);
+              }
+            }}
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            {zipBusy ? "Building…" : "Download portable .zip"}
+          </Button>
+          <span className="font-mono text-xs text-muted-foreground" data-testid="text-portable-counts">
+            {portableCount} image{portableCount === 1 ? "" : "s"} included ·{" "}
+            {realWorldCount} private real-world reference{realWorldCount === 1 ? "" : "s"} excluded
+          </span>
+          {zip && (
+            <StatusPill
+              label={`${zip.fileName} · ${zip.fileCount} files · ${zip.bytes.toLocaleString()} bytes · ${zip.downloaded ? "download triggered" : "download blocked"}`}
+              tone={zip.downloaded ? "accent" : "quiet"}
+              testId="status-portable-zip"
+            />
+          )}
+        </div>
+      </Panel>
 
       <Panel
         eyebrow="Whole library"

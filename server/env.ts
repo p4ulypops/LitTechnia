@@ -24,6 +24,10 @@ export type AppEnv = {
   /** Absolute base URL used to build magic links. */
   appUrl: string;
   databasePath: string;
+  /** Directory that holds uploaded attachment bytes (originals + thumbnails). */
+  mediaDir: string;
+  /** Hard cap on one attachment upload, in bytes. */
+  maxUploadBytes: number;
   cookieName: string;
   sessionDays: number;
   magicLinkTtlMinutes: number;
@@ -136,6 +140,11 @@ export function loadEnv(env: NodeJS.ProcessEnv = process.env): AppEnv {
     port,
     appUrl,
     databasePath: (env.DATABASE_PATH ?? "./data.db").trim(),
+    mediaDir: (env.MEDIA_DIR ?? "./media").trim(),
+    maxUploadBytes: Math.min(
+      Math.max(Number(env.MEDIA_MAX_UPLOAD_BYTES ?? 15 * 1024 * 1024), 1024),
+      64 * 1024 * 1024,
+    ),
     cookieName: (env.SESSION_COOKIE_NAME ?? "wordsmithery_session").trim(),
     sessionDays: Math.min(Math.max(Number(env.SESSION_TTL_DAYS ?? 30), 1), 90),
     magicLinkTtlMinutes,
