@@ -2,6 +2,12 @@ import "@testing-library/jest-dom/vitest";
 import { afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
 
+// Sub-PRD B tests need an in-memory SQLite database. Set this before any
+// module that imports server/db.ts is loaded, so the singleton is created
+// against :memory: rather than a file on disk.
+process.env.DATABASE_PATH = ":memory:";
+process.env.NODE_ENV = "test";
+
 // vitest runs with globals: false, which disables Testing Library's
 // automatic cleanup -- register it explicitly so renders never leak
 // between tests.

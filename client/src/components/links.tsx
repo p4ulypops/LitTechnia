@@ -82,10 +82,23 @@ export function LinkPanel({
         {related.map((rel) => (
           <span
             key={rel.link.id}
-            className="group inline-flex items-center gap-1 rounded-sm border border-border bg-secondary/70 py-1 pl-2 pr-1 text-xs"
+            className={`group inline-flex items-center gap-1 rounded-sm border py-1 pl-2 pr-1 text-xs ${
+              rel.derived
+                ? "border-dashed border-muted-foreground/40 bg-muted/30 text-muted-foreground"
+                : "border-border bg-secondary/70"
+            }`}
             data-testid={`chip-link-${rel.link.id}`}
+            title={rel.derived ? "Derived from a #S: tag in the prose — rebuildable" : undefined}
           >
-            <span className="text-muted-foreground">{kindLabels[rel.kind]}</span>
+            {rel.derived && (
+              <span
+                className="text-[10px] uppercase tracking-wide text-muted-foreground/60"
+                aria-label="derived link"
+              >
+                #S
+              </span>
+            )}
+            <span className={rel.derived ? "text-muted-foreground" : "text-muted-foreground"}>{kindLabels[rel.kind]}</span>
             <button
               type="button"
               className="font-medium underline decoration-dotted underline-offset-2 hover:text-primary"
@@ -103,6 +116,7 @@ export function LinkPanel({
               aria-label={`Remove link to ${entityName(snapshot, rel.kind, rel.id)}`}
               data-testid={`button-remove-link-${rel.link.id}`}
               className="rounded-sm p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              title={rel.derived ? "Derived links are rebuilt from prose — removing is temporary" : undefined}
             >
               <X className="h-3 w-3" />
             </button>
