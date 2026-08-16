@@ -20,6 +20,7 @@ import { attachSession, checkOrigin, requireAuth } from "./auth/session";
 import { isDemoOwner } from "./auth/demo";
 import { env, publicAuthConfig, requestHostname } from "./env";
 import { resolveConnectors } from "./connectors";
+import { cleanupAttachmentFiles, registerMediaRoutes } from "./media-routes";
 import {
   detectCollision,
   listReferences,
@@ -111,6 +112,15 @@ export async function registerRoutes(
   app.use("/api/projects", requireAuth);
   app.use("/api/library", requireAuth);
   app.use("/api/connections", requireAuth);
+
+  /* ----------------------------------------------------- media (Sub-PRD A) */
+
+  /**
+   * Dedicated upload / derive / content / thumbnail endpoints. These are NOT
+   * the generic collection route: multipart ingest, byte caps, MIME sniffing
+   * and server-computed storage keys live in server/media-routes.ts.
+   */
+  registerMediaRoutes(app);
 
   /* ------------------------------------------------------------- connections */
 
@@ -361,13 +371,22 @@ export async function registerRoutes(
     res.json(row);
   });
 
-  app.delete("/api/projects/:projectId/:collection/:id", (req, res) => {
+  app.delete("/api/projects/:projectId/:collection/:id", async (req, res) => {
     const { collection, projectId, id } = req.params;
     if (!isCollection(collection))
       return res.status(404).json({ error: "Unknown collection" });
+    // Attachments own bytes on disk; grab the row first so the files can be
+    // removed alongside the record instead of being orphaned.
+    let attachment: { storageKey?: string } | undefined;
+    if (collection === "attachments") {
+      attachment = storage
+        .getSnapshot(req.auth!.user.id, projectId)
+        ?.attachments.find((a) => a.id === id);
+    }
     const ok = storage.remove(req.auth!.user.id, projectId, collection, id);
     if (!ok)
       return res.status(404).json({ error: "Not found in this project" });
+    if (attachment) await cleanupAttachmentFiles(attachment);
     res.status(204).end();
   });
 

@@ -25,11 +25,11 @@ if (!("ResizeObserver" in globalThis)) {
   (globalThis as Record<string, unknown>).ResizeObserver = ResizeObserverStub;
 }
 
-if (!Element.prototype.scrollIntoView) {
+if (typeof Element !== "undefined" && !Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = () => {};
 }
 
-if (!window.matchMedia) {
+if (typeof window !== "undefined" && !window.matchMedia) {
   window.matchMedia = ((query: string) => ({
     matches: false,
     media: query,

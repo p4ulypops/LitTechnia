@@ -15,6 +15,7 @@ import {
   SNAPSHOT_FORMAT_VERSION,
   type ProjectSnapshot,
 } from "@shared/schema";
+import { exportableAttachments } from "@shared/media";
 
 export type ExportKind = "markdown" | "html" | "narration" | "json" | "rss" | "atom";
 
@@ -240,7 +241,10 @@ function projectPayload(snapshot: ProjectSnapshot) {
     world: snapshot.world,
     notes: snapshot.notes.map((n) => ({ ...n, tags: parseList(n.tags) })),
     links: snapshot.links,
-    attachments: snapshot.attachments,
+    /* Sub-PRD A: real-world-reference photos and every privateNote are
+       stripped by default. The filter is a one-line predicate on `role` —
+       see exportableAttachments in shared/media.ts. */
+    attachments: exportableAttachments(snapshot.attachments),
     checklist: snapshot.checklist,
     /* v0.3: portable authored data. Feed definitions and the activity trail are
        operational/publication state and are deliberately not exported. */
@@ -264,10 +268,15 @@ const commonDocs = {
   lists: "plots[].setups, plots[].payoffs and notes[].tags are JSON-encoded string arrays in the app and decoded arrays in this export.",
   operationalStateExcluded:
     "Feed definitions and the activity trail are publication/operational state, not authored content, so they are not part of this export.",
+<<<<<<< HEAD
   commentsExcluded:
     "Margin comments are self-only sidecar annotations and are excluded from every export by default.",
+=======
+  mediaPolicy:
+    "Real-world-reference photos (attachments[].role === \"real_world_ref\") and every attachments[].privateNote are private to the author and are excluded from this export by default. Binary media bytes travel in the portable .zip export, not in this JSON document.",
+>>>>>>> origin/main
   unsupportedInPrototype: [
-    "Binary media is not embedded: attachments[] records file name, type, size and provenance metadata only.",
+    "Binary media is not embedded in JSON: attachments[] records file name, type, size and provenance metadata only. Use the portable .zip export for the files themselves.",
     "attachments[].privateNote is a private field for real-world references and is not intended for publication.",
     "Version history is not included in this prototype export.",
     "This export is produced in the browser. The prototype has no filesystem sync, no encryption at rest and no durable browser storage.",
