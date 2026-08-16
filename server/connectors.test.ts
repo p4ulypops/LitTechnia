@@ -111,10 +111,18 @@ describe("resolveConnectors", () => {
     }
   });
 
-  it("marks working no-account file/feed capabilities as file_based", () => {
-    for (const id of ["markdown-txt", "rss-atom"]) {
-      expect(stateOf(fixtureEnv(), id).state).toBe("file_based");
-    }
+  it("marks working no-account file capabilities as file_based", () => {
+    expect(stateOf(fixtureEnv(), "markdown-txt").state).toBe("file_based");
+  });
+
+  it("marks the RSS/Atom feed available now that it is hosted as well as downloadable", () => {
+    const connector = stateOf(fixtureEnv(), "rss-atom");
+    expect(connector.state).toBe("available");
+    // The card must describe both real paths: the no-account browser download
+    // and the hosted, token-addressed, revocable URL.
+    expect(connector.reason).toMatch(/browser/);
+    expect(connector.reason).toMatch(/hosted feed URL/);
+    expect(connector.reason).toMatch(/404/);
   });
 
   it("routes unsupported file connectors to the real Markdown import as a safe alternative", () => {

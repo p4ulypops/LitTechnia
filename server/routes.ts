@@ -9,7 +9,11 @@
  *     or a header, so a signed-in author cannot address another author's book;
  *     an unowned or unknown project id is an indistinguishable 404.
  *
- * Only /api/health and /api/auth/* are reachable without a session.
+ * Only /api/health, /api/auth/* and the hosted-feed route are reachable
+ * without a session. GET /feeds/:token.xml (Sub-PRD C) is deliberately
+ * unauthenticated — the unguessable token in the path is the credential —
+ * and it is registered here, before serveStatic's catch-all is installed in
+ * server/index.ts, so the SPA fallback can never swallow it.
  */
 import type { Express } from "express";
 import type { Server } from "node:http";
@@ -20,6 +24,7 @@ import { attachSession, checkOrigin, requireAuth } from "./auth/session";
 import { isDemoOwner } from "./auth/demo";
 import { env, publicAuthConfig, requestHostname } from "./env";
 import { resolveConnectors } from "./connectors";
+import { registerFeedManagementRoutes, registerPublicFeedRoutes } from "./feeds";
 import { cleanupAttachmentFiles, registerMediaRoutes } from "./media-routes";
 import {
   detectCollision,
@@ -108,10 +113,21 @@ export async function registerRoutes(
 
   registerAuthRoutes(app);
 
+  /* ------------------------------------------------------- hosted feeds
+   * The first unauthenticated read path in the product. It sits OUTSIDE the
+   * /api/projects requireAuth wall below; the token in the URL is the
+   * credential, revocation is a hard 404, and the route carries its own rate
+   * limit and cache headers. See server/feeds.ts.
+   */
+  registerPublicFeedRoutes(app);
+
   // From here down every /api route requires a signed-in author.
   app.use("/api/projects", requireAuth);
   app.use("/api/library", requireAuth);
   app.use("/api/connections", requireAuth);
+
+  // Authenticated feed management for the Connections page (list/mint/revoke).
+  registerFeedManagementRoutes(app);
 
   /* ----------------------------------------------------- media (Sub-PRD A) */
 
