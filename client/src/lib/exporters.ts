@@ -231,13 +231,10 @@ const commonDocs = {
   lists: "plots[].setups, plots[].payoffs and notes[].tags are JSON-encoded string arrays in the app and decoded arrays in this export.",
   operationalStateExcluded:
     "Feed definitions and the activity trail are publication/operational state, not authored content, so they are not part of this export.",
-<<<<<<< HEAD
   commentsExcluded:
     "Margin comments are self-only sidecar annotations and are excluded from every export by default.",
-=======
   mediaPolicy:
     "Real-world-reference photos (attachments[].role === \"real_world_ref\") and every attachments[].privateNote are private to the author and are excluded from this export by default. Binary media bytes travel in the portable .zip export, not in this JSON document.",
->>>>>>> origin/main
   unsupportedInPrototype: [
     "Binary media is not embedded in JSON: attachments[] records file name, type, size and provenance metadata only. Use the portable .zip export for the files themselves.",
     "attachments[].privateNote is a private field for real-world references and is not intended for publication.",
