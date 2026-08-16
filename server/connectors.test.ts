@@ -15,6 +15,8 @@ function fixtureEnv(overrides: Partial<AppEnv> = {}): AppEnv {
     port: 5000,
     appUrl: "http://localhost:5000",
     databasePath: ":memory:",
+    mediaDir: ":memory:",
+    maxUploadBytes: 15 * 1024 * 1024,
     cookieName: "test_session",
     sessionDays: 30,
     magicLinkTtlMinutes: 15,
