@@ -14,10 +14,13 @@
 import { getTableColumns, getTableName } from "drizzle-orm";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
 import type {
+  Alias,
   Attachment,
+  CaptureItem,
   Character,
   ChecklistItem,
   CollectionName,
+  Comment,
   ImportItem,
   ImportKind,
   ImportResult,
@@ -34,9 +37,12 @@ import type {
   WorldEntry,
 } from "@shared/schema";
 import {
+  aliases,
   attachments,
+  captureItems,
   characters,
   checklistItems,
+  comments,
   events,
   links,
   notes,
@@ -74,6 +80,9 @@ const collectionTables: Record<CollectionName, SQLiteTable> = {
   links,
   attachments,
   checklist: checklistItems,
+  aliases,
+  comments,
+  captureItems,
 };
 
 type ColumnMap = { key: string; column: string }[];
@@ -194,6 +203,9 @@ export class SqliteStorage implements IStorage {
       links: this.rows("links", project.id) as unknown as Link[],
       attachments: this.rows("attachments", project.id) as unknown as Attachment[],
       checklist: this.rows("checklist", project.id) as unknown as ChecklistItem[],
+      aliases: this.rows("aliases", project.id) as unknown as Alias[],
+      comments: this.rows("comments", project.id) as unknown as Comment[],
+      captureItems: this.rows("captureItems", project.id) as unknown as CaptureItem[],
     };
   }
 
@@ -206,6 +218,7 @@ export class SqliteStorage implements IStorage {
       world: snapshot.world.length,
       notes: snapshot.notes.length,
       links: snapshot.links.length,
+      attachments: snapshot.attachments.length,
       words: snapshot.scenes.reduce((total, s) => total + words(s.content), 0),
     };
   }
@@ -331,6 +344,9 @@ export class SqliteStorage implements IStorage {
       links: "lk",
       attachments: "at",
       checklist: "cl",
+      aliases: "al",
+      comments: "cm",
+      captureItems: "cp",
     };
     const row: Record<string, unknown> = {
       ...data,
@@ -540,6 +556,9 @@ export class SqliteStorage implements IStorage {
           ["links", book.links as unknown as Row[]],
           ["attachments", book.attachments as unknown as Row[]],
           ["checklist", book.checklist as unknown as Row[]],
+          ["aliases", book.aliases as unknown as Row[]],
+          ["comments", book.comments as unknown as Row[]],
+          ["captureItems", book.captureItems as unknown as Row[]],
         ];
         for (const [collection, rows] of buckets) {
           for (const row of rows) {
@@ -570,9 +589,12 @@ export class SqliteStorage implements IStorage {
 export const storage = new SqliteStorage();
 
 export type {
+  Alias,
   Attachment,
+  CaptureItem,
   Character,
   ChecklistItem,
+  Comment,
   Link,
   Note,
   Plot,

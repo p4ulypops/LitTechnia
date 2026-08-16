@@ -35,6 +35,7 @@ function scene(overrides: Partial<Scene> = {}): Scene {
     change: "",
     orderIndex: 0,
     draftZero: 0,
+    updatedAt: "",
     ...overrides,
   };
 }
@@ -51,6 +52,9 @@ function snapshot(scenes: Scene[], projectOverrides: Partial<Project> = {}): Pro
     links: [],
     attachments: [],
     checklist: [],
+    aliases: [],
+    comments: [],
+    captureItems: [],
   };
 }
 

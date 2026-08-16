@@ -6,7 +6,63 @@
  * seed, every word here is fixed placeholder material written into the file. The
  * app never generates prose at runtime.
  */
-import type { ProjectSnapshot } from "@shared/schema";
+import type {
+  Attachment,
+  Character,
+  ChecklistItem,
+  Link,
+  Note,
+  Plot,
+  Project,
+  ProjectSnapshot,
+  Scene,
+  StoryEvent,
+  WorldEntry,
+} from "@shared/schema";
+
+/* ------------------------------------------------------------ v0.3 defaults */
+
+/**
+ * The seed literals below predate the v0.3 shared schema migration. Rather than
+ * repeat `updatedAt: ""` on a few hundred authored rows, the row shapes are
+ * declared without the columns that migration added and `completeSeed` fills
+ * them in with their schema defaults. Demo material carries no real timestamps,
+ * so an empty `updatedAt` is the honest value: nothing has been edited yet.
+ */
+type SeedSnapshot = {
+  project: Project;
+  scenes: Omit<Scene, "updatedAt">[];
+  characters: Omit<Character, "updatedAt">[];
+  plots: Omit<Plot, "updatedAt">[];
+  events: Omit<StoryEvent, "updatedAt">[];
+  world: Omit<WorldEntry, "updatedAt">[];
+  notes: Omit<Note, "updatedAt">[];
+  links: Omit<Link, "updatedAt" | "origin" | "relKind">[];
+  attachments: Attachment[];
+  checklist: Omit<ChecklistItem, "updatedAt">[];
+};
+
+export function completeSeed(seed: SeedSnapshot): ProjectSnapshot {
+  const stamp = <T,>(rows: T[]) => rows.map((row) => ({ ...row, updatedAt: "" }));
+  return {
+    project: seed.project,
+    scenes: stamp(seed.scenes),
+    characters: stamp(seed.characters),
+    plots: stamp(seed.plots),
+    events: stamp(seed.events),
+    world: stamp(seed.world),
+    notes: stamp(seed.notes),
+    // Every seeded link was drawn by hand, so it is authored, not derived.
+    links: seed.links.map((link) => ({ ...link, origin: "authored", relKind: "", updatedAt: "" })),
+    attachments: seed.attachments,
+    checklist: stamp(seed.checklist),
+    // The demo library ships no aliases, comments or captures yet.
+    aliases: [],
+    comments: [],
+    captureItems: [],
+  };
+}
+
 
 /* ------------------------------------------------- book two: Salt and Signal */
 
@@ -18,7 +74,7 @@ const S = "salt-and-signal";
  * readiness checks deliberately unmet.
  */
 export function buildSaltAndSignal(): ProjectSnapshot {
-  return {
+  return completeSeed({
     project: {
       id: S,
       ownerId: "", // assigned by storage when the demo library is seeded
@@ -216,7 +272,7 @@ export function buildSaltAndSignal(): ProjectSnapshot {
       { id: "ss-cl-1", projectId: S, label: "Decide where the survey ship belongs on the timeline", done: 0, orderIndex: 0 },
       { id: "ss-cl-2", projectId: S, label: "Write the kitchen scene from Ruth's side once", done: 0, orderIndex: 1 },
     ],
-  };
+  });
 }
 
 /* --------------------------------------------- book three: archived example */
@@ -225,7 +281,7 @@ const W = "weatherwrights-daughter";
 
 /** A shelved book, kept to demonstrate archive / unarchive. */
 export function buildArchivedBook(): ProjectSnapshot {
-  return {
+  return completeSeed({
     project: {
       id: W,
       ownerId: "", // assigned by storage when the demo library is seeded
@@ -296,5 +352,5 @@ export function buildArchivedBook(): ProjectSnapshot {
     checklist: [
       { id: "wd-cl-1", projectId: W, label: "Reread before deciding whether to restart", done: 0, orderIndex: 0 },
     ],
-  };
+  });
 }

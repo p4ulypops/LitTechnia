@@ -242,6 +242,11 @@ function projectPayload(snapshot: ProjectSnapshot) {
     links: snapshot.links,
     attachments: snapshot.attachments,
     checklist: snapshot.checklist,
+    /* v0.3: portable authored data. Feed definitions and the activity trail are
+       operational/publication state and are deliberately not exported. */
+    aliases: snapshot.aliases,
+    comments: snapshot.comments,
+    captureItems: snapshot.captureItems,
   };
 }
 
@@ -250,8 +255,11 @@ const commonDocs = {
   projectBoundary:
     "Every record carries projectId. Records never reference an id in another project, so a single book can be lifted out or dropped in whole.",
   lists: "plots[].setups, plots[].payoffs and notes[].tags are JSON-encoded string arrays in the app and decoded arrays in this export.",
+  operationalStateExcluded:
+    "Feed definitions and the activity trail are publication/operational state, not authored content, so they are not part of this export.",
   unsupportedInPrototype: [
-    "Binary media is not embedded: attachments[] records file name, type and size only.",
+    "Binary media is not embedded: attachments[] records file name, type, size and provenance metadata only.",
+    "attachments[].privateNote is a private field for real-world references and is not intended for publication.",
     "Version history is not included in this prototype export.",
     "This export is produced in the browser. The prototype has no filesystem sync, no encryption at rest and no durable browser storage.",
   ],
