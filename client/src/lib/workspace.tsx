@@ -212,7 +212,7 @@ export function relatedLinks(
   snapshot: ProjectSnapshot,
   kind: EntityKind,
   id: string,
-): { link: Link; kind: EntityKind; id: string; note: string }[] {
+): { link: Link; kind: EntityKind; id: string; note: string; derived: boolean }[] {
   return snapshot.links
     .filter((l) => (l.fromKind === kind && l.fromId === id) || (l.toKind === kind && l.toId === id))
     .map((l) => {
@@ -222,6 +222,7 @@ export function relatedLinks(
         kind: (isFrom ? l.toKind : l.fromKind) as EntityKind,
         id: isFrom ? l.toId : l.fromId,
         note: l.note,
+        derived: l.origin === "derived",
       };
     });
 }

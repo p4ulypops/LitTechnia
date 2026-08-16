@@ -20,6 +20,7 @@ import PlotsPage from "@/pages/plots";
 import TimelinePage from "@/pages/timeline";
 import WorldPage from "@/pages/world";
 import ResearchPage from "@/pages/research";
+import CaptureInboxPage from "@/pages/capture-inbox";
 import ExportsPage from "@/pages/exports";
 import ConnectionsPage from "@/pages/connections";
 import NotFound from "@/pages/not-found";
@@ -36,6 +37,7 @@ function AppRouter() {
       <Route path="/timeline" component={TimelinePage} />
       <Route path="/worldbuilding" component={WorldPage} />
       <Route path="/research" component={ResearchPage} />
+      <Route path="/capture" component={CaptureInboxPage} />
       <Route path="/exports" component={ExportsPage} />
       <Route path="/connections" component={ConnectionsPage} />
       <Route path="/account" component={AccountRoute} />

@@ -21,6 +21,7 @@ import type {
   ChecklistItem,
   CollectionName,
   Comment,
+  EntityKind,
   ImportItem,
   ImportKind,
   ImportResult,
@@ -53,8 +54,34 @@ import {
 } from "@shared/schema";
 import { sqlite } from "./db";
 import { buildLibrarySeed } from "./seed";
+import { rebuildDerivedLinks } from "./tag-resolver";
+import { reAnchor } from "./comment-anchor";
+
+/** Collections whose text fields may carry #S: tags. */
+const TEXT_CARRYING_COLLECTIONS = new Set<CollectionName>([
+  "scenes",
+  "characters",
+  "plots",
+  "events",
+  "world",
+  "notes",
+  "aliases",
+]);
 
 type Row = { id: string; [k: string]: unknown };
+
+/** Error thrown when a client tries to create a derived link directly. */
+export class DerivedLinkRejectedError extends Error {
+  constructor() {
+    super("Derived links are created only by the server-side tag resolver.");
+    this.name = "DerivedLinkRejectedError";
+  }
+}
+
+/** Quick check whether a table has a given column key. */
+function allowedColumns(table: SQLiteTable): Set<string> {
+  return new Set(columnsOf(table).map(({ key }) => key));
+}
 
 const words = (text: string) => {
   const cleaned = text.replace(/\[[^\]]*\]/g, " ").trim();
@@ -148,6 +175,14 @@ export interface IStorage {
     direction: "up" | "down",
   ): Scene[] | undefined;
   importItems(ownerId: string, projectId: string, items: ImportItem[]): ImportResult | undefined;
+  /** Classify a capture item into a real record, preserving its verbatim body. */
+  classifyCaptureItem(
+    ownerId: string,
+    projectId: string,
+    captureId: string,
+    kind: ImportKind,
+    title: string,
+  ): Row | undefined;
   /** True when this account owns the book. Cheap guard for the routes. */
   owns(ownerId: string, projectId: string): boolean;
   /** Replace one owner's library with the demo seed. Development only. */
@@ -334,6 +369,11 @@ export class SqliteStorage implements IStorage {
     data: Record<string, unknown>,
   ): Row | undefined {
     if (!this.owns(ownerId, projectId)) return undefined;
+    // Derived links are produced only by the server-side tag resolver — a client
+    // must never create one. See server/tag-resolver.ts.
+    if (collection === "links" && data.origin === "derived") {
+      throw new DerivedLinkRejectedError();
+    }
     const prefixes: Record<CollectionName, string> = {
       scenes: "sc",
       characters: "ch",
@@ -365,7 +405,19 @@ export class SqliteStorage implements IStorage {
         .get(projectId) as { n: number };
       row.orderIndex = next.n;
     }
-    return this.insertRow(collectionTables[collection], row);
+    // Set server-owned timestamps on create.
+    if ("updatedAt" in allowedColumns(collectionTables[collection])) {
+      row.updatedAt = new Date().toISOString();
+    }
+    if (collection === "comments" || collection === "captureItems") {
+      if (collection === "comments" && row.authorId === undefined) row.authorId = ownerId;
+    }
+    const created = this.insertRow(collectionTables[collection], row);
+    // After creating an alias, rebuild derived links so #S: tags start resolving.
+    if (collection === "aliases") {
+      rebuildDerivedLinks(projectId);
+    }
+    return created;
   }
 
   update(
@@ -376,29 +428,96 @@ export class SqliteStorage implements IStorage {
     patch: Record<string, unknown>,
   ): Row | undefined {
     if (!this.owns(ownerId, projectId)) return undefined;
+    // Derived links are produced only by the server-side resolver.
+    if (collection === "links" && patch.origin === "derived") {
+      throw new DerivedLinkRejectedError();
+    }
     const table = collectionTables[collection];
     const name = getTableName(table);
     const existing = sqlite
       .prepare(`SELECT ${selectList(table)} FROM "${name}" WHERE id = ? AND project_id = ?`)
       .get(id, projectId) as Row | undefined;
     if (!existing) return undefined;
-    const allowed = new Map(columnsOf(table).map(({ key, column }) => [key, column]));
+    const allowed = allowedColumns(table);
+    const columnMap = new Map(columnsOf(table).map(({ key, column }) => [key, column]));
     const entries = Object.entries(patch).filter(
       ([key, value]) =>
         allowed.has(key) && value !== undefined && key !== "id" && key !== "projectId",
     );
+    // Stamp updatedAt on every domain entity write (substrate for feeds).
+    if (allowed.has("updatedAt") && !entries.some(([k]) => k === "updatedAt")) {
+      entries.push(["updatedAt", new Date().toISOString()]);
+    }
     if (entries.length) {
       sqlite
         .prepare(
           `UPDATE "${name}" SET ${entries
-            .map(([key]) => `"${allowed.get(key)}" = ?`)
+            .map(([key]) => `"${columnMap.get(key)}" = ?`)
             .join(", ")} WHERE id = ? AND project_id = ?`,
         )
         .run(...entries.map(([, value]) => toSqlValue(value)), id, projectId);
     }
-    return sqlite
+    const updated = sqlite
       .prepare(`SELECT ${selectList(table)} FROM "${name}" WHERE id = ? AND project_id = ?`)
       .get(id, projectId) as Row;
+
+    // After editing any entity text surface, rebuild derived links so #S: tags
+    // stay current. The rebuild is cheap (delete + re-scan) and idempotent.
+    if (TEXT_CARRYING_COLLECTIONS.has(collection)) {
+      rebuildDerivedLinks(projectId);
+    }
+
+    // After editing scene content, fuzzy re-anchor all comments on that scene.
+    // The anchor never mutates the prose — it only records the new offset.
+    if (collection === "scenes" && patch.content !== undefined) {
+      this.reanchorCommentsFor("scene", id, projectId, String(patch.content));
+    }
+    if (collection === "notes" && patch.body !== undefined) {
+      this.reanchorCommentsFor("note", id, projectId, String(patch.body));
+    }
+
+    return updated;
+  }
+
+  /**
+   * Fuzzy re-anchor every comment on a target entity after its text changes.
+   * The anchor never mutates the prose — it only records the new offset and
+   * sets `moved = 1` when the match shifted.
+   */
+  private reanchorCommentsFor(
+    targetKind: "scene" | "note",
+    targetId: string,
+    projectId: string,
+    newText: string,
+  ): void {
+    const rows = sqlite
+      .prepare(
+        `SELECT id, anchor_start, anchor_end, anchor_quote FROM comments
+         WHERE project_id = ? AND target_kind = ? AND target_id = ? AND resolved_at = ''`,
+      )
+      .all(projectId, targetKind, targetId) as {
+      id: string;
+      anchor_start: number;
+      anchor_end: number;
+      anchor_quote: string;
+    }[];
+    const now = new Date().toISOString();
+    for (const row of rows) {
+      const update = reAnchor(
+        newText,
+        row.anchor_start,
+        row.anchor_end,
+        row.anchor_quote,
+      );
+      if (update.moved || update.anchorStart !== row.anchor_start) {
+        sqlite
+          .prepare(
+            `UPDATE comments SET anchor_start = ?, anchor_end = ?, moved = ?, updated_at = ?
+             WHERE id = ? AND project_id = ?`,
+          )
+          .run(update.anchorStart, update.anchorEnd, update.moved, now, row.id, projectId);
+      }
+    }
   }
 
   remove(ownerId: string, projectId: string, collection: CollectionName, id: string): boolean {
@@ -412,6 +531,10 @@ export class SqliteStorage implements IStorage {
       sqlite
         .prepare(`DELETE FROM links WHERE project_id = ? AND (from_id = ? OR to_id = ?)`)
         .run(projectId, id, id);
+    }
+    // After deleting an alias or any text-carrying entity, rebuild derived links.
+    if (TEXT_CARRYING_COLLECTIONS.has(collection)) {
+      rebuildDerivedLinks(projectId);
     }
     return true;
   }
@@ -532,6 +655,114 @@ export class SqliteStorage implements IStorage {
         }),
     };
     return byKind[item.kind]();
+  }
+
+  /* ------------------------------------------------- Sub-PRD B: capture & tags */
+
+  /**
+   * Classify a capture item into a real record. The capture's verbatim body is
+   * preserved — classification only sets the `classifiedKind`/`classifiedId`
+   * pointer and flips `status` to `classified`. Requires explicit confirmation;
+   * the body is never overwritten by the classification step.
+   */
+  classifyCaptureItem(
+    ownerId: string,
+    projectId: string,
+    captureId: string,
+    kind: ImportKind,
+    title: string,
+  ): Row | undefined {
+    if (!this.owns(ownerId, projectId)) return undefined;
+    const capture = sqlite
+      .prepare(`SELECT * FROM capture_items WHERE id = ? AND project_id = ?`)
+      .get(captureId, projectId) as Row | undefined;
+    if (!capture) return undefined;
+    if (capture.status !== "inbox") return undefined;
+    const body = String(capture.body ?? "");
+    const created = this.createFromCapture(ownerId, projectId, kind, title, body);
+    if (!created) return undefined;
+    const now = new Date().toISOString();
+    sqlite
+      .prepare(
+        `UPDATE capture_items SET status = 'classified', classified_kind = ?, classified_id = ?, updated_at = ?
+         WHERE id = ? AND project_id = ?`,
+      )
+      .run(kind, created.id, now, captureId, projectId);
+    return sqlite
+      .prepare(`SELECT * FROM capture_items WHERE id = ? AND project_id = ?`)
+      .get(captureId, projectId) as Row;
+  }
+
+  private createFromCapture(
+    ownerId: string,
+    projectId: string,
+    kind: ImportKind,
+    title: string,
+    body: string,
+  ): Row | undefined {
+    const byKind: Record<ImportKind, () => Row | undefined> = {
+      scene: () =>
+        this.create(ownerId, projectId, "scenes", {
+          chapter: "Captured",
+          title,
+          content: body,
+          status: "draft-zero",
+          pov: "",
+          objective: "",
+          conflict: "",
+          change: "",
+          draftZero: 1,
+        }),
+      character: () =>
+        this.create(ownerId, projectId, "characters", {
+          name: title,
+          role: "Captured — needs review",
+          motivation: "",
+          wants: "",
+          fears: "",
+          wins: "",
+          losses: "",
+          arc: "",
+          voice: body,
+        }),
+      plot: () =>
+        this.create(ownerId, projectId, "plots", {
+          name: title,
+          kind: "subplot",
+          premise: body,
+          stakes: "",
+          status: "open",
+          setups: "[]",
+          payoffs: "[]",
+          openQuestion: "",
+        }),
+      event: () =>
+        this.create(ownerId, projectId, "events", {
+          label: title,
+          storyTime: "",
+          confidence: "unplaced",
+          notes: body,
+        }),
+      world: () =>
+        this.create(ownerId, projectId, "world", {
+          name: title,
+          category: "Captured",
+          facts: body,
+          rules: "",
+          limits: "",
+          costs: "",
+          exceptions: "",
+        }),
+      note: () =>
+        this.create(ownerId, projectId, "notes", {
+          title,
+          body,
+          tags: JSON.stringify(["captured"]),
+          sourcePath: "",
+          origin: "authored",
+        }),
+    };
+    return byKind[kind]();
   }
 
   /**

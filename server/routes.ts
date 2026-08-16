@@ -13,7 +13,8 @@
  */
 import type { Express } from "express";
 import type { Server } from "node:http";
-import { storage } from "./storage";
+import { storage, DerivedLinkRejectedError } from "./storage";
+import { sqlite } from "./db";
 import { registerAuthRoutes } from "./auth/routes";
 import { attachSession, checkOrigin, requireAuth } from "./auth/session";
 import { isDemoOwner } from "./auth/demo";
@@ -21,7 +22,14 @@ import { env, publicAuthConfig, requestHostname } from "./env";
 import { resolveConnectors } from "./connectors";
 import { cleanupAttachmentFiles, registerMediaRoutes } from "./media-routes";
 import {
+  detectCollision,
+  listReferences,
+  applyRename,
+  retireAlias,
+} from "./tag-resolver";
+import {
   collections,
+  importKinds,
   importRequestSchema,
   insertAliasSchema,
   insertAttachmentSchema,
@@ -37,6 +45,8 @@ import {
   insertWorldEntrySchema,
   newProjectSchema,
   type CollectionName,
+  type EntityKind,
+  type ImportKind,
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -203,6 +213,86 @@ export async function registerRoutes(
     res.json(scenes);
   });
 
+  /* ----------------------------------------------- Sub-PRD B: capture & tags */
+
+  /**
+   * Classify a capture item into a real record. The verbatim body is preserved;
+   * classification only sets the pointer and flips the status. Requires the
+   * author to choose a kind and title — it is never auto-classified.
+   */
+  app.post("/api/projects/:projectId/capture-items/:id/classify", (req, res) => {
+    const parsed = z
+      .object({
+        kind: z.enum(importKinds),
+        title: z.string().trim().min(1).max(200),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Classification needs a kind and title" });
+    }
+    const row = storage.classifyCaptureItem(
+      req.auth!.user.id,
+      req.params.projectId,
+      req.params.id,
+      parsed.data.kind as ImportKind,
+      parsed.data.title,
+    );
+    if (!row) return res.status(404).json({ error: "Capture item not found or already classified" });
+    res.json(row);
+  });
+
+  /**
+   * Check whether a slug would collide with an existing alias pointing at a
+   * different entity. Collisions are never silently re-pointed.
+   */
+  app.get("/api/projects/:projectId/aliases/collision-check", (req, res) => {
+    const { slug, targetKind, targetId } = req.query;
+    if (!slug || !targetKind || !targetId) {
+      return res.status(400).json({ error: "slug, targetKind and targetId are required" });
+    }
+    const collision = detectCollision(
+      req.params.projectId,
+      String(slug),
+      String(targetKind) as EntityKind,
+      String(targetId),
+    );
+    res.json({ collision });
+  });
+
+  /**
+   * List every reference to a slug in the project's authored Markdown. The
+   * rename flow presents this list; the app applies updates only after the
+   * author confirms.
+   */
+  app.get("/api/projects/:projectId/aliases/:slug/references", (req, res) => {
+    const refs = listReferences(req.params.projectId, req.params.slug);
+    res.json({ references: refs });
+  });
+
+  /**
+   * Apply a rename: replace every #S:old-slug with #S:new-slug in authored
+   * Markdown. The caller must have already presented the reference list and
+   * received confirmation. Retires the old alias and creates the new one.
+   */
+  app.post("/api/projects/:projectId/aliases/:slug/rename", (req, res) => {
+    const parsed = z.object({ newSlug: z.string().trim().min(1).max(48) }).safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "A new slug is required" });
+    }
+    const { projectId, slug } = req.params;
+    if (!storage.owns(req.auth!.user.id, projectId)) {
+      return res.status(404).json({ error: "Unknown project" });
+    }
+    // Retire the old alias (keeps the row as a redirect).
+    const aliasRow = sqlite
+      .prepare(`SELECT id FROM aliases WHERE project_id = ? AND LOWER(slug) = LOWER(?) AND retired_at = ''`)
+      .get(projectId, slug) as { id: string } | undefined;
+    if (!aliasRow) return res.status(404).json({ error: "Alias not found" });
+    retireAlias(projectId, aliasRow.id);
+    const rewritten = applyRename(projectId, slug, parsed.data.newSlug);
+    res.json({ rewritten, newSlug: parsed.data.newSlug });
+  });
+
   /* ------------------------------------------------- generic collection CRUD */
 
   app.post("/api/projects/:projectId/:collection", (req, res) => {
@@ -221,12 +311,27 @@ export async function registerRoutes(
         .status(400)
         .json({ error: "Validation failed", detail: parsed.error.message });
     }
-    const row = storage.create(
-      req.auth!.user.id,
-      projectId,
-      collection,
-      parsed.data as Record<string, unknown>,
-    );
+    // Derived links are rejected on the client-facing write path — only the
+    // server-side tag resolver creates them.
+    if (collection === "links" && parsed.data.origin === "derived") {
+      return res.status(403).json({
+        error: "Derived links are created only by the server-side tag resolver.",
+      });
+    }
+    let row: Record<string, unknown> | undefined;
+    try {
+      row = storage.create(
+        req.auth!.user.id,
+        projectId,
+        collection,
+        parsed.data as Record<string, unknown>,
+      );
+    } catch (err) {
+      if (err instanceof DerivedLinkRejectedError) {
+        return res.status(403).json({ error: err.message });
+      }
+      throw err;
+    }
     res.status(201).json(row);
   });
 
@@ -240,13 +345,27 @@ export async function registerRoutes(
         .status(400)
         .json({ error: "Validation failed", detail: parsed.error.message });
     }
-    const row = storage.update(
-      req.auth!.user.id,
-      projectId,
-      collection,
-      id,
-      parsed.data as Record<string, unknown>,
-    );
+    // Derived links are rejected on the client-facing write path.
+    if (collection === "links" && parsed.data.origin === "derived") {
+      return res.status(403).json({
+        error: "Derived links are created only by the server-side tag resolver.",
+      });
+    }
+    let row: Record<string, unknown> | undefined;
+    try {
+      row = storage.update(
+        req.auth!.user.id,
+        projectId,
+        collection,
+        id,
+        parsed.data as Record<string, unknown>,
+      );
+    } catch (err) {
+      if (err instanceof DerivedLinkRejectedError) {
+        return res.status(403).json({ error: err.message });
+      }
+      throw err;
+    }
     if (!row)
       return res.status(404).json({ error: "Not found in this project" });
     res.json(row);

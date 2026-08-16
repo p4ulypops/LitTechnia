@@ -249,7 +249,14 @@ function projectPayload(snapshot: ProjectSnapshot) {
     /* v0.3: portable authored data. Feed definitions and the activity trail are
        operational/publication state and are deliberately not exported. */
     aliases: snapshot.aliases,
-    comments: snapshot.comments,
+    /*
+     * Sub-PRD B: comments are self-only margin annotations excluded from every
+     * export by default. They are sidecar rows anchored to prose, never part of
+     * the manuscript itself. An author may opt in to a redacted export later;
+     * until then, no export carries another reader's (or the author's own)
+     * inline notes.
+     */
+    comments: [],
     captureItems: snapshot.captureItems,
   };
 }
@@ -261,8 +268,13 @@ const commonDocs = {
   lists: "plots[].setups, plots[].payoffs and notes[].tags are JSON-encoded string arrays in the app and decoded arrays in this export.",
   operationalStateExcluded:
     "Feed definitions and the activity trail are publication/operational state, not authored content, so they are not part of this export.",
+<<<<<<< HEAD
+  commentsExcluded:
+    "Margin comments are self-only sidecar annotations and are excluded from every export by default.",
+=======
   mediaPolicy:
     "Real-world-reference photos (attachments[].role === \"real_world_ref\") and every attachments[].privateNote are private to the author and are excluded from this export by default. Binary media bytes travel in the portable .zip export, not in this JSON document.",
+>>>>>>> origin/main
   unsupportedInPrototype: [
     "Binary media is not embedded in JSON: attachments[] records file name, type, size and provenance metadata only. Use the portable .zip export for the files themselves.",
     "attachments[].privateNote is a private field for real-world references and is not intended for publication.",
